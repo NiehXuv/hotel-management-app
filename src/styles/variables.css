@@ -1,0 +1,381 @@
+:root {
+    /* Core Color System - Refined hotel-inspired palette with extended gradations */
+    --primary-color: #3d5a80;
+    /* Deep blue with subtle warmth */
+    --primary-90: #4e6a90;
+    /* New intermediate shade */
+    --primary-80: #5f7aa0;
+    /* New intermediate shade */
+    --primary-light: #98c1d9;
+    /* Soft sky blue */
+    --primary-lighter: #e0fbfc;
+    /* Pale cyan for subtle backgrounds */
+    --primary-dark: #293241;
+    /* Navy blue for emphasis */
+    --primary-darker: #1e2530;
+    /* Deeper navy for dark mode elements */
+
+    /* Enhanced gradients for dimensional surfaces */
+    --primary-gradient: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    --primary-gradient-alt: linear-gradient(135deg, var(--primary-80), var(--primary-color));
+    --primary-gradient-subtle: linear-gradient(135deg, var(--primary-lighter), var(--primary-light));
+
+    --accent-color: #ee6c4d;
+    /* Warm coral for accents */
+    --accent-light: #f8a08a;
+    /* Soft coral */
+    --accent-lighter: #fbe3dd;
+    /* Very soft coral for subtle highlights */
+    --accent-dark: #d13b1c;
+    /* Deep coral for hover states */
+    --accent-darker: #b32e14;
+    /* Even deeper coral for pressed states */
+
+    /* New accent gradients */
+    --accent-gradient: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+    --accent-gradient-subtle: linear-gradient(135deg, var(--accent-lighter), var(--accent-light));
+
+    /* Semantic Color System - Enhanced with more nuanced palette */
+    --success-color: #2a9d8f;
+    /* Teal green */
+    --success-light: #e8f5f3;
+    /* Light teal background */
+    --success-dark: #1e7268;
+    /* Darker teal for emphasis */
+    --success-gradient: linear-gradient(135deg, var(--success-color), var(--success-dark));
+
+    --warning-color: #e9c46a;
+    /* Warm amber */
+    --warning-light: #fcf8eb;
+    /* Light amber background */
+    --warning-dark: #d0aa45;
+    /* Darker amber for emphasis */
+    --warning-gradient: linear-gradient(135deg, var(--warning-color), var(--warning-dark));
+
+    --error-color: #e76f51;
+    /* Terracotta */
+    --error-light: #fef0ec;
+    /* Light terracotta background */
+    --error-dark: #c4563a;
+    /* Darker terracotta for emphasis */
+    --error-gradient: linear-gradient(135deg, var(--error-color), var(--error-dark));
+
+    --info-color: #4c9aff;
+    /* Clear blue */
+    --info-light: #e9f2ff;
+    /* Light blue background */
+    --info-dark: #2c7ad9;
+    /* Darker blue for emphasis */
+    --info-gradient: linear-gradient(135deg, var(--info-color), var(--info-dark));
+
+    /* Neutral Palette - Warmer, more sophisticated grays with microshifts for better distinction */
+    --neutral-50: #f8f9fa;
+    --neutral-100: #f1f3f5;
+    --neutral-200: #e9ecef;
+    --neutral-300: #dee2e6;
+    --neutral-400: #ced4da;
+    --neutral-500: #adb5bd;
+    --neutral-600: #6c757d;
+    --neutral-700: #495057;
+    --neutral-800: #343a40;
+    --neutral-900: #212529;
+
+    /* Surface Colors - For card backgrounds with more contrast options */
+    --surface-primary: #ffffff;
+    /* Primary surface color (cards, etc.) */
+    --surface-secondary: var(--neutral-50);
+    /* Secondary surface color */
+    --surface-tertiary: var(--primary-lighter);
+    /* Accent surface */
+    --surface-quaternary: #fafbfc;
+    /* Ultra subtle surface for layering */
+
+    /* Surface gradients for subtle dimension */
+    --surface-gradient: linear-gradient(120deg, var(--surface-primary), var(--neutral-100));
+    --surface-gradient-alt: linear-gradient(120deg, var(--neutral-50), var(--neutral-100));
+
+    /* New overlay and transparency variables for layering */
+    --overlay-light: rgba(255, 255, 255, 0.85);
+    --overlay-light-subtle: rgba(255, 255, 255, 0.65);
+    --overlay-dark: rgba(0, 0, 0, 0.65);
+    --overlay-dark-subtle: rgba(0, 0, 0, 0.4);
+    --scrim-light: rgba(248, 249, 250, 0.7);
+    --scrim-dark: rgba(33, 37, 41, 0.7);
+
+    /* Typography - Enhanced system */
+    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-secondary: 'Georgia', 'Times New Roman', serif;
+    --font-family-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+    /* Font Weights - Complete progression */
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* Font Sizes - More nuanced scale with 8px baseline */
+    --font-size-2xs: 0.625rem;
+    /* 10px - New smaller size */
+    --font-size-xs: 0.75rem;
+    /* 12px */
+    --font-size-sm: 0.875rem;
+    /* 14px */
+    --font-size-md: 1rem;
+    /* 16px - Base */
+    --font-size-lg: 1.125rem;
+    /* 18px */
+    --font-size-xl: 1.25rem;
+    /* 20px */
+    --font-size-2xl: 1.5rem;
+    /* 24px */
+    --font-size-3xl: 1.875rem;
+    /* 30px */
+    --font-size-4xl: 2.25rem;
+    /* 36px */
+    --font-size-5xl: 3rem;
+    /* 48px */
+    --font-size-6xl: 3.75rem;
+    /* 60px - New larger size */
+
+    /* Line Heights - Refined for better typography */
+    --line-height-tight: 1.25;
+    /* Headings - Slightly increased for better readability */
+    --line-height-normal: 1.5;
+    /* Body text */
+    --line-height-loose: 1.7;
+    /* Larger text blocks - Slightly tightened for better control */
+
+    /* Letter Spacing - Enhanced precision */
+    --letter-spacing-tight: -0.025em;
+    --letter-spacing-normal: 0;
+    --letter-spacing-wide: 0.025em;
+    --letter-spacing-display: -0.03em;
+    /* For large headlines */
+    --letter-spacing-caption: 0.02em;
+    /* For small secondary text */
+
+    /* Spacing Scale - 4px baseline with golden ratio progression */
+    --spacing-4xs: 0.0625rem;
+    /* 1px - New micro spacing */
+    --spacing-3xs: 0.125rem;
+    /* 2px */
+    --spacing-2xs: 0.25rem;
+    /* 4px */
+    --spacing-xs: 0.5rem;
+    /* 8px */
+    --spacing-sm: 0.75rem;
+    /* 12px */
+    --spacing-md: 1rem;
+    /* 16px */
+    --spacing-lg: 1.5rem;
+    /* 24px */
+    --spacing-xl: 2rem;
+    /* 32px */
+    --spacing-2xl: 3rem;
+    /* 48px */
+    --spacing-3xl: 4rem;
+    /* 64px */
+    --spacing-4xl: 6rem;
+    /* 96px */
+
+    /* Text-specific spacing for rhythm */
+    --text-spacing-xs: 0.375rem;
+    /* 6px - for tight stacked elements */
+    --text-spacing-sm: 0.625rem;
+    /* 10px - for related text elements */
+
+    /* Border Radius - Refined for more modern aesthetic */
+    --radius-xs: 0.125rem;
+    /* 2px - New micro radius */
+    --radius-sm: 0.25rem;
+    /* 4px */
+    --radius-md: 0.5rem;
+    /* 8px */
+    --radius-lg: 0.75rem;
+    /* 12px */
+    --radius-xl: 1rem;
+    /* 16px */
+    --radius-2xl: 1.5rem;
+    /* 24px */
+    --radius-3xl: 2rem;
+    /* 32px - New larger radius */
+    --radius-full: 9999px;
+    /* Fully rounded */
+
+    /* Shadows - More realistic with layered approach and subtle coloring */
+    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+    /* Soft UI Shadows - Enhanced with subtle color tinting */
+    --shadow-soft-sm: 0 2px 8px rgba(18, 28, 53, 0.05);
+    --shadow-soft-md: 0 4px 12px rgba(18, 28, 53, 0.07);
+    --shadow-soft-lg: 0 8px 24px rgba(18, 28, 53, 0.08);
+
+    /* Colored shadows for accent elements */
+    --shadow-primary: 0 4px 14px rgba(61, 90, 128, 0.15);
+    --shadow-accent: 0 4px 14px rgba(238, 108, 77, 0.15);
+    --shadow-success: 0 4px 14px rgba(42, 157, 143, 0.15);
+    --shadow-warning: 0 4px 14px rgba(233, 196, 106, 0.15);
+    --shadow-error: 0 4px 14px rgba(231, 111, 81, 0.15);
+
+    /* Highlights - Subtle top highlights for cards */
+    --highlight-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    --highlight-bottom: inset 0 -1px 0 0 rgba(0, 0, 0, 0.05);
+    --highlight-left: inset 1px 0 0 0 rgba(255, 255, 255, 0.1);
+
+    /* Transitions - Enhanced with more natural easing curves */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: 500ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* New more precise transitions for specific purposes */
+    --transition-bounce: 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-entrance: 300ms cubic-bezier(0.21, 1.02, 0.73, 1);
+    --transition-exit: 250ms cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    --transition-emphasis: 150ms cubic-bezier(0.2, 0.85, 0.4, 1.275);
+
+    /* Z-index scale - Expanded with more granularity */
+    --z-index-negative: -1;
+    --z-index-low: 10;
+    --z-index-dropdown: 1000;
+    --z-index-sticky: 1020;
+    --z-index-fixed: 1030;
+    --z-index-modal-backdrop: 1040;
+    --z-index-modal: 1050;
+    --z-index-popover: 1060;
+    --z-index-tooltip: 1070;
+    --z-index-highest: 9999;
+
+    /* Content Constraints */
+    --content-max-width: 1280px;
+    --content-narrow-width: 920px;
+    --content-reading-width: 680px;
+    /* New optimal reading width */
+
+    /* Border Widths */
+    --border-width-thin: 1px;
+    --border-width-normal: 2px;
+    --border-width-thick: 4px;
+    --border-width-heavy: 6px;
+    /* New thicker border option */
+
+    /* Element-specific properties */
+    --card-padding: var(--spacing-lg);
+    --card-border-color: rgba(0, 0, 0, 0.04);
+    --card-border-width: 1px;
+    --header-height: 64px;
+    --footer-height: 56px;
+    --sidebar-width: 280px;
+    --bottom-sheet-handle-width: 36px;
+    --bottom-sheet-handle-height: 4px;
+    --fab-size: 56px;
+    /* Floating action button size */
+    --icon-button-size: 40px;
+    /* Icon button default size */
+    --nav-item-height: 48px;
+    /* Navigation item height */
+
+    /* Animation Durations */
+    --animation-short: 200ms;
+    --animation-medium: 300ms;
+    --animation-long: 500ms;
+
+    /* Motion presets for component animations */
+    --motion-entrance-duration: 350ms;
+    --motion-entrance-easing: cubic-bezier(0.21, 1.02, 0.73, 1);
+    --motion-exit-duration: 250ms;
+    --motion-exit-easing: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+    --motion-emphasis-duration: 550ms;
+    --motion-emphasis-easing: cubic-bezier(0.18, 1.25, 0.4, 1);
+}
+
+/* Dark mode theming - Refined for more contrast and depth */
+.dark-mode {
+    --primary-color: #5d8ab8;
+    --primary-90: #6e97c0;
+    --primary-80: #7fa5c7;
+    --primary-light: #7fa5c7;
+    --primary-lighter: #1c2b3a;
+    --primary-dark: #3d5a80;
+    --primary-darker: #2c425c;
+
+    --accent-color: #ff7e67;
+    --accent-light: #ff9885;
+    --accent-lighter: #2a1f1c;
+    --accent-dark: #bd5e4d;
+    --accent-darker: #a25042;
+
+    --success-color: #2dcca7;
+    --success-light: #1c3330;
+    --success-dark: #25a78c;
+    --warning-color: #ffd166;
+    --warning-light: #332d1f;
+    --warning-dark: #e5bc5c;
+    --error-color: #f07167;
+    --error-light: #33211f;
+    --error-dark: #d6655c;
+    --info-color: #61a0ff;
+    --info-light: #1e2433;
+    --info-dark: #5490e2;
+
+    /* Adjusted neutrals for better dark mode contrast */
+    --neutral-50: #202125;
+    --neutral-100: #2d2e33;
+    --neutral-200: #3e3f44;
+    --neutral-300: #5c5d63;
+    --neutral-400: #7e7f88;
+    --neutral-500: #a1a2ad;
+    --neutral-600: #b5b6c3;
+    --neutral-700: #d7d8e0;
+    --neutral-800: #e9eaf0;
+    --neutral-900: #f8f9fa;
+
+    /* Adjusted surfaces for better dark mode depth */
+    --surface-primary: #121212;
+    --surface-secondary: #1e1e1e;
+    --surface-tertiary: #252525;
+    --surface-quaternary: #2a2a2c;
+
+    /* Dark mode specific adjustments */
+    --card-border-color: rgba(255, 255, 255, 0.08);
+    --shadow-soft-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --shadow-soft-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-soft-lg: 0 8px 24px rgba(0, 0, 0, 0.3);
+
+    /* Dark mode overlay adjustments */
+    --overlay-light: rgba(255, 255, 255, 0.15);
+    --overlay-light-subtle: rgba(255, 255, 255, 0.08);
+    --overlay-dark: rgba(0, 0, 0, 0.7);
+    --overlay-dark-subtle: rgba(0, 0, 0, 0.5);
+    --scrim-light: rgba(30, 30, 30, 0.7);
+    --scrim-dark: rgba(18, 18, 18, 0.8);
+
+    /* Highlights adjustment */
+    --highlight-top: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    --highlight-bottom: inset 0 -1px 0 0 rgba(0, 0, 0, 0.2);
+}
+
+/* High contrast mode for accessibility */
+.high-contrast {
+    --primary-color: #0057b7;
+    --primary-light: #3480d8;
+    --primary-dark: #003c7e;
+    --accent-color: #e53935;
+    --accent-light: #ff6b68;
+    --accent-dark: #ab000d;
+
+    --neutral-600: #5c5c5c;
+    --neutral-700: #3d3d3d;
+    --neutral-800: #1f1f1f;
+    --neutral-900: #000000;
+
+    --card-border-width: 2px;
+    --card-border-color: rgba(0, 0, 0, 0.2);
+}
