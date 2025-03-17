@@ -16,6 +16,7 @@ import Reports from '../pages/Reports';
 import Settings from '../pages/Settings';
 import Profile from '../pages/Profile';
 import NotFound from '../pages/NotFound';
+import ResetPassword from '../pages/ResetPassword';
 
 /**
  * Protected Route Component
@@ -45,6 +46,7 @@ const AppRoutes = () => {
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       
       {/* Protected Routes */}
       <Route 

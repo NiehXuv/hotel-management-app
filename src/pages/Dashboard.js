@@ -72,7 +72,7 @@ const Dashboard = () => {
     switch (userRole) {
       case 'boss':
       case 'manager':
-        return <BossManagerDashboard statistics={statistics} />;
+        
       case 'sales':
         return <SalesDashboard statistics={statistics} />;
       case 'accountant':
@@ -83,7 +83,7 @@ const Dashboard = () => {
       case 'host':
         return <CleanerDashboard statistics={statistics} />;
       default:
-        return null;
+        return <BossManagerDashboard statistics={statistics} />;;
     }
   };
   

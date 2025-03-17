@@ -36,7 +36,7 @@ const Button = ({
   
   // Variant classes
   const variantClasses = {
-    primary: 'bg-primary-color text-white hover:bg-primary-dark active:bg-primary-dark',
+    primary: 'bg-primary-color text-black hover:bg-primary-dark active:bg-primary-dark',
     secondary: 'bg-secondary-color text-white hover:bg-secondary-dark active:bg-secondary-dark',
     success: 'bg-success-color text-white hover:bg-success-color/90 active:bg-success-color/90',
     warning: 'bg-warning-color text-neutral-900 hover:bg-warning-color/90 active:bg-warning-color/90',
