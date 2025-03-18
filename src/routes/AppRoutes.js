@@ -17,6 +17,7 @@ import Settings from '../pages/Settings';
 import Profile from '../pages/Profile';
 import NotFound from '../pages/NotFound';
 import ResetPassword from '../pages/ResetPassword';
+import Calendar from '../pages/Calendar';
 
 /**
  * Protected Route Component
@@ -66,7 +67,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+      <Route 
+        path="/calendar" 
+        element={
+          <ProtectedRoute>
+            <Calendar />
+          </ProtectedRoute>
+        } 
+      />
       <Route 
         path="/tasks" 
         element={

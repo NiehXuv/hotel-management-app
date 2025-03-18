@@ -22,9 +22,9 @@ const BottomNavigation = () => {
       path: '/dashboard',
     },
     tasks: {
-      label: 'Tasks',
-      icon: '✓',
-      path: '/tasks',
+      label: 'Calendar',
+      icon: '📅',
+      path: '/calendar',
     },
     properties: {
       label: 'Properties',
