@@ -5,7 +5,9 @@ const cors = require('cors');
 const { sendResetEmail } = require('./components/Account/sendresetemail');
 const { resetPassword } = require('./components/Account/resetpassword');
 const { listAllBookings } = require('./components/Booking/listAllBooking');
-const { createRoom } = require("./components/Room/createRoom");
+
+//Room functions
+const { createRoom, getHotelIds } = require("./components/Room/createRoom");
 
 
 const app = express();
@@ -16,9 +18,10 @@ app.post('/api/send-reset-email', sendResetEmail);
 app.post('/api/reset-password', resetPassword);
 app.get('/booking/list', listAllBookings);
 
-//Room
-app.post("/api/hotel/:hotelId/room", createRoom);
-app.get("/api/hotel/:hotelId/room", listRoom);
+//Room api
+app.get('/api/hotels/ids', getHotelIds);
+app.post('/api/rooms/:hotelId', createRoom);
+
 
 
 
