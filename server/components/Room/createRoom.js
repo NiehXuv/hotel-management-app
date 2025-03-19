@@ -19,7 +19,7 @@ const getHotelIds = async (req, res) => {
         // Assuming Hotel entries have a 'name' field; adjust if different
         const hotelList = Object.entries(hotels).map(([id, data]) => ({
             id,
-            name: data.name || `Hotel ${id}`
+            name: data.Name || `Hotel ${id}`
         }));
 
         return res.status(200).json({
