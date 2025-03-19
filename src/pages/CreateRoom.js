@@ -64,7 +64,7 @@ const CreateRoom = () => {
   // Added form validation
   const validateForm = () => {
     const errors = {};
-    if (!roomData.hotelId) errors.hotelId = 'Please select a hotel';
+    if (!roomData.hotelId) errors.hotelId = 'Please select a property';
     if (roomData.name.length < 2) errors.name = 'Name must be at least 2 characters';
     if (roomData.description.length < 10) errors.description = 'Description must be at least 10 characters';
     if (Number(roomData.pricebyDay) < 0) errors.pricebyDay = 'Price cannot be negative';
@@ -233,7 +233,7 @@ const CreateRoom = () => {
               className="w-full text-sm sm:text-base"
             >
               <option value="" disabled style={styles.selectOptionDefault}>
-                Select a Hotel
+                Select a Property
               </option>
               {hotelIds
                 .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
