@@ -1,10 +1,10 @@
-// roomController.js
+
 const { database } = require("../config/firebaseconfig");
 const { ref, set, get } = require("firebase/database");
 
 const getHotelIds = async (req, res) => {
     try {
-        const hotelsRef = ref(database, 'Hotel'); // Matches your table name
+        const hotelsRef = ref(database, 'Hotel');
         const snapshot = await get(hotelsRef);
 
         if (!snapshot.exists()) {
@@ -16,7 +16,6 @@ const getHotelIds = async (req, res) => {
         }
 
         const hotels = snapshot.val();
-        // Assuming Hotel entries have a 'name' field; adjust if different
         const hotelList = Object.entries(hotels).map(([id, data]) => ({
             id,
             name: data.Name || `Hotel ${id}`
@@ -110,6 +109,7 @@ const createRoom = async (req, res) => {
             pricebyDay: Number(pricebyDay),
             pricebyNight: Number(pricebyNight),
             pricebySection: Number(pricebySection),
+            status: 'available',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         });
