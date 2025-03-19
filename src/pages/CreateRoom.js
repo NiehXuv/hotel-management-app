@@ -16,6 +16,7 @@ const CreateRoom = () => {
   });
   const [hotelIds, setHotelIds] = useState([]);
   const [loadingHotels, setLoadingHotels] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Added for submission loading state
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
@@ -60,19 +61,32 @@ const CreateRoom = () => {
     setRoomData({ ...roomData, [e.target.name]: e.target.value });
   };
 
+  // Added form validation
+  const validateForm = () => {
+    const errors = {};
+    if (!roomData.hotelId) errors.hotelId = 'Please select a hotel';
+    if (roomData.name.length < 2) errors.name = 'Name must be at least 2 characters';
+    if (roomData.description.length < 10) errors.description = 'Description must be at least 10 characters';
+    if (Number(roomData.pricebyDay) < 0) errors.pricebyDay = 'Price cannot be negative';
+    if (Number(roomData.pricebyNight) < 0) errors.pricebyNight = 'Price cannot be negative';
+    if (Number(roomData.pricebySection) < 0) errors.pricebySection = 'Price cannot be negative';
+    if (!/^\d+$/.test(roomData.roomNumber)) errors.roomNumber = 'Room number must be numeric';
+
+    setError(Object.values(errors)[0] || '');
+    return Object.keys(errors).length === 0;
+  };
+
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMessage('');
 
-    const { hotelId, name, description, pricebyDay, pricebyNight, pricebySection, roomNumber } = roomData;
+    if (!validateForm()) return;
 
-    if (!hotelId || !name || !description || !pricebyDay || !pricebyNight || !pricebySection || !roomNumber) {
-      setError('All fields are required');
-      return;
-    }
-
+    setIsSubmitting(true);
     try {
+      const { hotelId, name, description, pricebyDay, pricebyNight, pricebySection, roomNumber } = roomData;
+
       const response = await fetch(`http://localhost:5000/api/rooms/${hotelId}`, {
         method: 'POST',
         headers: {
@@ -92,24 +106,39 @@ const CreateRoom = () => {
 
       if (response.ok && data.success) {
         setSuccessMessage(data.message || 'Room created successfully!');
+        setRoomData({
+          hotelId: '',
+          name: '',
+          description: '',
+          pricebyDay: '',
+          pricebyNight: '',
+          pricebySection: '',
+          roomNumber: '',
+        });
         setTimeout(() => navigate('/dashboard'), 1000);
       } else {
         setError(data.error || 'Failed to create room');
       }
     } catch (err) {
-      setError('Error connecting to the server: ' + err.message);
+      if (err.message.includes('Network')) {
+        setError('Unable to connect to the server. Please check your internet connection.');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+      console.error('Submission error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Updated styles with bottom padding to account for navigation bar
   const styles = {
     container: {
       maxWidth: '100%',
       width: '100%',
       margin: '0 auto',
       padding: '1rem',
-      paddingBottom: 'calc(1rem + var(--footer-height))', // Add padding to account for BottomNavigation
-      minHeight: '100vh', // Ensure the container takes up the full viewport height
+      paddingBottom: 'calc(1rem + var(--footer-height))',
+      minHeight: '100vh',
       boxSizing: 'border-box',
     },
     select: {
@@ -133,6 +162,10 @@ const CreateRoom = () => {
       backgroundColor: '#f3f4f6',
       color: '#6b7280',
       cursor: 'not-allowed',
+    },
+    selectOptionDefault: { // Added for default option styling
+      color: '#6b7280',
+      fontStyle: 'italic',
     },
     label: {
       display: 'block',
@@ -199,12 +232,16 @@ const CreateRoom = () => {
               }}
               className="w-full text-sm sm:text-base"
             >
-              <option value="">Select a Hotel</option>
-              {hotelIds.map((hotel) => (
-                <option key={hotel.id || hotel} value={hotel.id || hotel}>
-                  {`Hotel ${hotel.id} ${hotel.name}`}
-                </option>
-              ))}
+              <option value="" disabled style={styles.selectOptionDefault}>
+                Select a Hotel
+              </option>
+              {hotelIds
+                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                .map((hotel) => (
+                  <option key={hotel.id} value={hotel.id}>
+                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)} {/* Capitalize name */}
+                  </option>
+                ))}
             </select>
             {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
           </div>
@@ -218,6 +255,7 @@ const CreateRoom = () => {
             required
             placeholder="Enter room name"
             className="text-sm sm:text-base"
+            aria-label="Room Name"
           />
 
           {/* Description */}
@@ -229,6 +267,7 @@ const CreateRoom = () => {
             required
             placeholder="Enter room description"
             className="text-sm sm:text-base"
+            aria-label="Description"
           />
 
           {/* Price by Day */}
@@ -241,6 +280,7 @@ const CreateRoom = () => {
             required
             placeholder="Enter price per day"
             className="text-sm sm:text-base"
+            aria-label="Price by Day"
           />
 
           {/* Price by Night */}
@@ -253,6 +293,7 @@ const CreateRoom = () => {
             required
             placeholder="Enter price per night"
             className="text-sm sm:text-base"
+            aria-label="Price by Night"
           />
 
           {/* Price by Section */}
@@ -265,6 +306,7 @@ const CreateRoom = () => {
             required
             placeholder="Enter price per section"
             className="text-sm sm:text-base"
+            aria-label="Price by Section"
           />
 
           {/* Room Number */}
@@ -277,19 +319,19 @@ const CreateRoom = () => {
             required
             placeholder="Enter room number"
             className="text-sm sm:text-base"
+            aria-label="Room Number"
           />
 
           {/* Submit Button */}
-          
           <Button
             type="submit"
             variant="primary"
             size="lg"
             fullWidth
-            disabled={loadingHotels}
+            disabled={loadingHotels || isSubmitting}
             className="mt-4 text-sm sm:text-base"
           >
-            Create Room
+            {isSubmitting ? 'Creating...' : 'Create Room'}
           </Button>
         </form>
 
