@@ -18,6 +18,7 @@ import Profile from '../pages/Profile';
 import NotFound from '../pages/NotFound';
 import ResetPassword from '../pages/ResetPassword';
 import Calendar from '../pages/Calendar';
+import CreateRoom from '../pages/CreateRoom';
 
 /**
  * Protected Route Component
@@ -48,7 +49,8 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      
+     
+
       {/* Protected Routes */}
       <Route 
         path="/" 
@@ -59,6 +61,7 @@ const AppRoutes = () => {
         } 
       />
       
+      
       <Route 
         path="/dashboard" 
         element={
@@ -67,6 +70,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+
+      <Route 
+        path="/hotel/createroom" 
+        element={
+          <ProtectedRoute>
+            <CreateRoom />
+          </ProtectedRoute>
+        } 
+      />
+      
       <Route 
         path="/calendar" 
         element={
