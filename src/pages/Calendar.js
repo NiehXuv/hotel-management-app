@@ -239,7 +239,7 @@ const Calendar = () => {
 const styles = {
   scheduleContainer: {
     margin: 'auto',
-    padding: '0',
+    padding: '1em',
     backgroundColor: '#f9f9f9',
     maxWidth: '99%',
     minHeight: '100vh',
