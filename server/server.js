@@ -13,6 +13,7 @@ const { createRoom, getHotelIds} = require('./components/Room/createRoom');
 const { updateRoomStatus } = require('./components/Room/updateRoomStatus');
 const { updateRoom } = require('./components/Room/updateRoom');
 const { listRooms } = require('./components/Room/listRooms');
+const { deleteRoom } = require('./components/Room/deleteRoom');
 
 
 //Hotel(Property) functions
@@ -45,7 +46,7 @@ app.post('/api/rooms/:hotelId', createRoom);
 app.put('/hotels/:hotelId/rooms/:roomNumber/status', updateRoomStatus);
 app.put('/hotels/:hotelId/rooms/:roomNumber', updateRoom);
 app.get('/api/hotels/:hotelId/rooms', listRooms);
-
+app.delete('/hotels/:hotelId/rooms/:roomNumber', deleteRoom);
 
 //Hotel(Property) routes
 app.post('/api/hotel/create', createProperty);
