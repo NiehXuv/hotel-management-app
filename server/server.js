@@ -20,6 +20,9 @@ const { createProperty } = require('./components/Property/createProperty');
 
 //Customer
 const { createCustomer } = require('./components/Customer/createCustomer');
+const { listAllCustomers } = require('./components/Customer/listCustomer');
+const { removeCustomer } = require('./components/Customer/removeCustomer');
+const { updateCustomer } = require('./components/Customer/updateCustomer');
 
 //Staff
 const { listStaff } = require('./components/Staff/listStaff');
@@ -49,6 +52,9 @@ app.post('/api/hotel', createProperty);
 
 //Customer
 app.post('/customer/create', createCustomer);
+app.get('/customer/list', listAllCustomers);
+app.delete('/customer/delete/:customerId', removeCustomer);
+app.put('/customer/update/:customerId', updateCustomer);
 
 //Staff
 app.get('/api/staff/list/:hotelId', listStaff);

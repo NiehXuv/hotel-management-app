@@ -4,15 +4,15 @@ const { ref, get, set } = require("firebase/database");
 async function createCustomer(req, res) {
     try {
         const {
-            email = "", // Default to empty string
-            firstName,
-            lastName = "Unknown", // Default to "Unknown" if not provided
-            phoneNumber = "", // Default to empty string
-            note = "" // Default to empty string
+            Email = "", // Default to empty string
+            FirstName,  // Match the case used in the frontend
+            LastName = "Unknown", // Default to "Unknown" if not provided
+            PhoneNumber = "", // Default to empty string
+            Note = "" // Default to empty string
         } = req.body;
 
-        // Validate only firstName as required
-        if (!firstName || typeof firstName !== "string" || firstName.trim() === "") {
+        // Validate only FirstName as required
+        if (!FirstName || typeof FirstName !== "string" || FirstName.trim() === "") {
             return res.status(400).json({ error: "FirstName is required and must be a non-empty string" });
         }
 
@@ -20,23 +20,23 @@ async function createCustomer(req, res) {
         const customersRef = ref(database, 'Customer');
         const customersSnap = await get(customersRef);
 
-        let customerId = firstName.toLowerCase(); // Convert to lowercase for consistency
+        let customerId = FirstName.toLowerCase(); // Convert to lowercase for consistency
         let count = 1;
 
         if (customersSnap.exists()) {
             const existingCustomers = customersSnap.val();
             while (existingCustomers[customerId]) {
-                customerId = `${firstName.toLowerCase()}${count}`;
+                customerId = `${FirstName.toLowerCase()}${count}`;
                 count++;
             }
         }
 
         const customerData = {
-            Email: email,
-            FirstName: firstName,
-            LastName: lastName,
-            PhoneNumber: phoneNumber,
-            Note: note
+            Email,
+            FirstName,
+            LastName,
+            PhoneNumber,
+            Note
         };
 
         console.log("New customer path:", `Customer/${customerId}`);

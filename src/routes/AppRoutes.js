@@ -21,6 +21,7 @@ import Calendar from '../pages/Calendar';
 import CreateRoom from '../pages/CreateRoom';
 import Add from '../pages/Add';
 import CreateBooking from '../pages/CreateBooking';
+import Customer from '../pages/Customer';
 
 /**
  * Protected Route Component
@@ -90,7 +91,15 @@ const AppRoutes = () => {
         } 
       />
       
-      
+      <Route 
+        path="/customer" 
+        element={
+          <ProtectedRoute>
+            <Customer />
+          </ProtectedRoute>
+        } 
+      />
+
       <Route 
         path="/calendar" 
         element={
