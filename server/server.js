@@ -48,7 +48,7 @@ app.get('/api/hotels/:hotelId/rooms', listRooms);
 
 
 //Hotel(Property) routes
-app.post('/api/hotel', createProperty);
+app.post('/api/hotel/create', createProperty);
 
 //Customer
 app.post('/customer/create', createCustomer);

@@ -1,5 +1,5 @@
 const { database } = require("../config/firebaseconfig");
-const { ref, set, get } = require("firebase/database");
+const { ref, set, get, runTransaction } = require("firebase/database");
 
 const createProperty = async (req, res) => {
     try{
@@ -17,41 +17,49 @@ const createProperty = async (req, res) => {
             });
         }
 
-        const hotelsRef = ref (database, 'Hotel');
+        const hotelsRef = ref(database, 'Hotel');
         const hotelSnapshot = await get(hotelsRef);
 
         if (hotelSnapshot.exists()) {
             const hotels = hotelSnapshot.val();
-            const hotelExists = Object.values(hotels).some(hotel =>
-                hotel.Name.toLowerCase() === name.toLowerCase() &&
-                hotel.Location.toLowerCase() === location.toLowerCase()
-            );
-
-            if (hotelExists) {
-                return res.status(400).json({ success: false, error: "Hotel with this name and location already exists" });
+        
+            for (const id in hotels) {
+                const hotel = hotels[id];
+        
+                if (
+                    hotel &&
+                    hotel.name && hotel.location && // Ensure properties exist
+                    hotel.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+                    hotel.location.trim().toLowerCase() === location.trim().toLowerCase()
+                ) {
+                    return res.status(400).json({ success: false, error: "Hotel with the same name and location already exists." });
+                }
             }
         }
-        const newHotelRef = push(hotelsRef);
-        const hotelId = newHotelRef.key;
-        
-        await set(newHotelRef,{
-            Name: name.trim(),
-            Description: description.trim(),
-            Location: location.trim(),
-            Email: email.trim(),
-            PhoneNumber: phoneNumber.trim(),
+
+        let newHotelId = 0;
+        if (hotelSnapshot.exists()) {
+            newHotelId = Object.keys(hotelSnapshot.val()).length + 1;
+        }
+
+        const hotelRef = ref(database, `Hotel/${newHotelId}`);
+        await set(hotelRef, {
+            name,
+            description,
+            location,
+            email,
+            phoneNumber,
         });
-        return res.status(200).json({ success: true,
-            data: {hotelId, name},
-             message: 'Hotel created successfully' });
+
+        return res.status(201).json({
+            success: true,
+            data: { hotelId: newHotelId, name },
+            message: "Hotel created successfully"
+        });
     }
     catch(error){
-        console.error('Error creating hotel:', {
-            error: error.message,
-            stack: error.stack,
-            hotelId: req.params.hotelId,
-            roomNumber: req.body.roomNumber
-        });
+        console.error("Error creating hotel:", error.message);
+        return res.status(500).json({ success: false, error: "Internal Server Error" });
     }
 }
 
