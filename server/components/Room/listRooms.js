@@ -1,4 +1,3 @@
-// components/Room/listRooms.js
 const { database } = require('../config/firebaseconfig');
 const { ref, get } = require('firebase/database');
 
@@ -36,6 +35,7 @@ const listRooms = async (req, res) => {
         // Get all rooms
         const roomsData = snapshot.val();
         let roomsList = Object.entries(roomsData).map(([roomNumber, data]) => ({
+            id: roomNumber, // Add id to match frontend expectation
             roomNumber,
             ...data
         }));
@@ -45,7 +45,7 @@ const listRooms = async (req, res) => {
             roomsList = roomsList.filter(room => {
                 let matches = true;
 
-                if (name && room.name.toLowerCase().indexOf(name.toLowerCase()) === -1) {
+                if (name && room.name && room.name.toLowerCase().indexOf(name.toLowerCase()) === -1) {
                     matches = false;
                 }
                 if (status && room.status !== status) {

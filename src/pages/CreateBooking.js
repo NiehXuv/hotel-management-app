@@ -8,13 +8,15 @@ const CreateBooking = () => {
   const [bookingData, setBookingData] = useState({
     bookIn: '',
     bookOut: '',
-    customerId: '',
+    customerName: '',
     eta: '',
     etd: '',
     extraFee: '',
     hotelId: '',
     roomId: '',
     staffId: '',
+    paymentStatus: 'Unpaid',
+    bookingStatus: 'Pending'
   });
   const [hotelIds, setHotelIds] = useState([]);
   const [roomIds, setRoomIds] = useState([]);
@@ -27,6 +29,7 @@ const CreateBooking = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
+  // Fetch Hotel IDs
   useEffect(() => {
     const fetchHotelIds = async () => {
       setLoadingHotels(true);
@@ -55,6 +58,7 @@ const CreateBooking = () => {
     fetchHotelIds();
   }, []);
 
+  // Fetch Room IDs based on selected hotelId
   useEffect(() => {
     if (bookingData.hotelId) {
       const fetchRoomIds = async () => {
@@ -82,16 +86,20 @@ const CreateBooking = () => {
         }
       };
       fetchRoomIds();
+    } else {
+      setRoomIds([]);
+      setBookingData((prev) => ({ ...prev, roomId: '' }));
     }
   }, [bookingData.hotelId]);
 
+  // Fetch Staff IDs using listStaff endpoint
   useEffect(() => {
     if (bookingData.hotelId) {
       const fetchStaffIds = async () => {
         setLoadingStaff(true);
         setError('');
         try {
-          const response = await fetch(`http://localhost:5000/api/hotels/${bookingData.hotelId}/staff`, {
+          const response = await fetch(`http://localhost:5000/api/staff/list/${bookingData.hotelId}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -99,10 +107,10 @@ const CreateBooking = () => {
           });
 
           const data = await response.json();
-          if (data.success) {
-            setStaffIds(data.data);
+          if (response.ok) {
+            setStaffIds(data); // Data is in the correct format: [{ id: "john", name: "John" }, ...]
           } else {
-            setError(`Failed to load staff: ${data.error || 'Unknown error'}`);
+            setError(data.error || 'Failed to load staff');
           }
         } catch (err) {
           setError(`Network error: ${err.message}`);
@@ -112,6 +120,9 @@ const CreateBooking = () => {
         }
       };
       fetchStaffIds();
+    } else {
+      setStaffIds([]);
+      setBookingData((prev) => ({ ...prev, staffId: '' }));
     }
   }, [bookingData.hotelId]);
 
@@ -126,10 +137,10 @@ const CreateBooking = () => {
     if (!bookingData.staffId) errors.staffId = 'Please select a staff member';
     if (!bookingData.bookIn) errors.bookIn = 'Please select a check-in date';
     if (!bookingData.bookOut) errors.bookOut = 'Please select a check-out date';
-    if (!bookingData.customerId) errors.customerId = 'Please enter a customer ID';
+    if (!bookingData.customerName) errors.customerName = 'Please enter a customer name';
     if (!bookingData.eta) errors.eta = 'Please enter an ETA';
     if (!bookingData.etd) errors.etd = 'Please enter an ETD';
-    if (Number(bookingData.extraFee) < 0) errors.extraFee = 'Extra fee cannot be negative';
+    if (bookingData.extraFee && Number(bookingData.extraFee) < 0) errors.extraFee = 'Extra fee cannot be negative';
 
     setError(Object.values(errors)[0] || '');
     return Object.keys(errors).length === 0;
@@ -147,16 +158,18 @@ const CreateBooking = () => {
       const {
         bookIn,
         bookOut,
-        customerId,
+        customerName,
         eta,
         etd,
         extraFee,
         hotelId,
         roomId,
         staffId,
+        paymentStatus,
+        bookingStatus
       } = bookingData;
 
-      const response = await fetch('http://localhost:5000/api/bookings', {
+      const response = await fetch('http://localhost:5000/booking/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -164,34 +177,38 @@ const CreateBooking = () => {
         body: JSON.stringify({
           bookIn,
           bookOut,
-          customerId,
+          customerName,
           eta,
           etd,
           extraFee,
           hotelId,
           roomId,
-          staffId,
+          staffId, // This will be the lowercase Name (e.g., "john")
+          paymentStatus,
+          bookingStatus
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        setSuccessMessage(data.message || 'Booking created successfully!');
+      if (response.ok && data.message) {
+        setSuccessMessage(data.message);
         setBookingData({
           bookIn: '',
           bookOut: '',
-          customerId: '',
+          customerName: '',
           eta: '',
           etd: '',
           extraFee: '',
           hotelId: '',
           roomId: '',
           staffId: '',
+          paymentStatus: 'Unpaid',
+          bookingStatus: 'Pending'
         });
         setTimeout(() => navigate('/dashboard'), 1000);
       } else {
-        setError(data.error || 'Failed to create booking');
+        setError(data.message || 'Failed to create booking');
       }
     } catch (err) {
       if (err.message.includes('Network')) {
@@ -309,16 +326,16 @@ const CreateBooking = () => {
                 Select a Property
               </option>
               {hotelIds
-                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                .sort((a, b) => a.name.localeCompare(b.name))
                 .map((hotel) => (
                   <option key={hotel.id} value={hotel.id}>
-                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)} {/* Capitalize name */}
+                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
                   </option>
                 ))}
             </select>
             {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
           </div>
-                
+
           {/* Room Dropdown */}
           <div>
             <label htmlFor="roomId" style={styles.label}>
@@ -331,10 +348,10 @@ const CreateBooking = () => {
               value={bookingData.roomId}
               onChange={handleChange}
               required
-              disabled={loadingRooms}
+              disabled={loadingRooms || !bookingData.hotelId}
               style={{
                 ...styles.select,
-                ...(loadingRooms ? styles.selectDisabled : {}),
+                ...(loadingRooms || !bookingData.hotelId ? styles.selectDisabled : {}),
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = styles.selectFocus.borderColor;
@@ -347,13 +364,13 @@ const CreateBooking = () => {
               className="w-full text-sm sm:text-base"
             >
               <option value="" disabled style={styles.selectOptionDefault}>
-                Select a Room
+                {bookingData.hotelId ? "Select a Room" : "Select a Property First"}
               </option>
               {roomIds
-                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                .sort((a, b) => a.roomNumber - b.roomNumber)
                 .map((room) => (
                   <option key={room.id} value={room.id}>
-                    {room.name.charAt(0).toUpperCase() + room.name.slice(1)} {/* Capitalize name */}
+                    {room.roomName} (Room {room.roomNumber})
                   </option>
                 ))}
             </select>
@@ -372,10 +389,10 @@ const CreateBooking = () => {
               value={bookingData.staffId}
               onChange={handleChange}
               required
-              disabled={loadingStaff}
+              disabled={loadingStaff || !bookingData.hotelId}
               style={{
                 ...styles.select,
-                ...(loadingStaff ? styles.selectDisabled : {}),
+                ...(loadingStaff || !bookingData.hotelId ? styles.selectDisabled : {}),
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = styles.selectFocus.borderColor;
@@ -388,13 +405,13 @@ const CreateBooking = () => {
               className="w-full text-sm sm:text-base"
             >
               <option value="" disabled style={styles.selectOptionDefault}>
-                Select a Staff Member
+                {bookingData.hotelId ? "Select a Staff Member" : "Select a Property First"}
               </option>
               {staffIds
-                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                .sort((a, b) => a.name.localeCompare(b.name))
                 .map((staff) => (
                   <option key={staff.id} value={staff.id}>
-                    {staff.name.charAt(0).toUpperCase() + staff.name.slice(1)} {/* Capitalize name */}
+                    {staff.name.charAt(0).toUpperCase() + staff.name.slice(1)}
                   </option>
                 ))}
             </select>
@@ -425,26 +442,26 @@ const CreateBooking = () => {
             aria-label="Check-Out Date"
           />
 
-          {/* Customer ID */}
+          {/* Customer Name */}
           <Input
-            name="customerId"
-            label="Customer ID"
-            value={bookingData.customerId}
+            name="customerName"
+            label="Customer Name"
+            value={bookingData.customerName}
             onChange={handleChange}
             required
-            placeholder="Enter customer ID"
+            placeholder="Enter customer name (e.g., Jane Smith)"
             className="text-sm sm:text-base"
-            aria-label="Customer ID"
+            aria-label="Customer Name"
           />
 
           {/* ETA */}
           <Input
             name="eta"
             label="ETA"
+            type="time"
             value={bookingData.eta}
             onChange={handleChange}
             required
-            placeholder="Enter ETA"
             className="text-sm sm:text-base"
             aria-label="ETA"
           />
@@ -453,10 +470,10 @@ const CreateBooking = () => {
           <Input
             name="etd"
             label="ETD"
+            type="time"
             value={bookingData.etd}
             onChange={handleChange}
             required
-            placeholder="Enter ETD"
             className="text-sm sm:text-base"
             aria-label="ETD"
           />
@@ -468,8 +485,7 @@ const CreateBooking = () => {
             type="number"
             value={bookingData.extraFee}
             onChange={handleChange}
-            required
-            placeholder="Enter extra fee"
+            placeholder="Enter extra fee (optional)"
             className="text-sm sm:text-base"
             aria-label="Extra Fee"
           />

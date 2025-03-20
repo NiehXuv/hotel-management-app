@@ -18,6 +18,12 @@ const { listRooms } = require('./components/Room/listRooms');
 //Hotel(Property) functions
 const { createProperty } = require('./components/Property/createProperty');
 
+//Customer
+const { createCustomer } = require('./components/Customer/createCustomer');
+
+//Staff
+const { listStaff } = require('./components/Staff/listStaff');
+
 //////////////////
 const app = express();
 app.use(express.json());
@@ -35,12 +41,17 @@ app.get('/api/hotels/ids', getHotelIds);
 app.post('/api/rooms/:hotelId', createRoom);
 app.put('/hotels/:hotelId/rooms/:roomNumber/status', updateRoomStatus);
 app.put('/hotels/:hotelId/rooms/:roomNumber', updateRoom);
-app.get('/hotels/:hotelId/rooms', listRooms);
+app.get('/api/hotels/:hotelId/rooms', listRooms);
 
 
 //Hotel(Property) routes
 app.post('/api/hotel', createProperty);
 
+//Customer
+app.post('/customer/create', createCustomer);
+
+//Staff
+app.get('/api/staff/list/:hotelId', listStaff);
 
 // Start the server
 const PORT = process.env.PORT || 5000;
