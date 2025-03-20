@@ -224,9 +224,9 @@ const CreateBooking = () => {
 
   const styles = {
     container: {
-      width: '400px',
+      width: '480px',
       margin: 'auto',
-      padding: '1rem',
+      padding: '2rem',
       paddingBottom: 'calc(1rem + var(--footer-height))',
       minHeight: '100vh',
       boxSizing: 'border-box',

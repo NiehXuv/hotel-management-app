@@ -16,9 +16,9 @@ const Add = () => {
   // Styles remain largely the same, with adjustments for the dropdown
   const styles = {
     container: {
-      width: '400px',
+      width: '480px',
       margin: 'auto',
-      padding: '2rem',
+      padding: '3rem',
       paddingBottom: 'calc(1rem + var(--footer-height))',
       minHeight: '100vh',
       boxSizing: 'border-box',
