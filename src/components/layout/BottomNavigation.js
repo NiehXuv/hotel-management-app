@@ -27,12 +27,50 @@ const BottomNavigation = () => {
   const handleNavigation = (path) => navigate(path);
 
   const getStyles = () => {
-    const isSmallScreen = window.innerWidth < 360;
-    const isLargeScreen = window.innerWidth > 480;
+    const windowWidth = window.innerWidth;
+    const isExtraSmallScreen = windowWidth < 320; // Very small devices
+    const isSmallScreen = windowWidth >= 320 && windowWidth < 360; // Small devices
+    const isMediumScreen = windowWidth >= 360 && windowWidth <= 480; // Typical mobile
+    const isLargeScreen = windowWidth > 480; // Larger than typical mobile
 
-    // Calculate button sizes
-    const sideButtonWidth = isSmallScreen ? '50px' : '60px';
-    const centerButtonWidth = isSmallScreen ? '5.5rem' : '6.5rem'; // Kept as 5.5rem/6.5rem (88px/104px)
+    // Dynamic sizing based on viewport width
+    const sideButtonWidth = isExtraSmallScreen
+      ? '40px'
+      : isSmallScreen
+      ? '45px'
+      : isMediumScreen
+      ? '50px'
+      : '60px';
+
+    const centerButtonWidth = isExtraSmallScreen
+      ? '3.5rem' // 56px
+      : isSmallScreen
+      ? '4rem' // 64px
+      : isMediumScreen
+      ? '4.5rem' // 72px
+      : '5.5rem'; // 88px
+
+    const centerIconSize = isExtraSmallScreen
+      ? '3.5rem' // 56px
+      : isSmallScreen
+      ? '4rem' // 64px
+      : isMediumScreen
+      ? '4.5rem' // 72px
+      : '5rem'; // 80px
+
+    const navHeight = isExtraSmallScreen
+      ? '50px'
+      : isSmallScreen
+      ? '55px'
+      : isMediumScreen
+      ? '60px'
+      : 'var(--footer-height, 70px)';
+
+    const padding = isExtraSmallScreen
+      ? '0 5px'
+      : isSmallScreen
+      ? '0 8px'
+      : '0 10px';
 
     return {
       nav: {
@@ -40,7 +78,7 @@ const BottomNavigation = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        height: isSmallScreen ? '60px' : 'var(--footer-height, 70px)',
+        height: navHeight,
         backgroundColor: '#fff',
         borderTop: '1px solid #e5e7eb',
         zIndex: 1000,
@@ -54,7 +92,7 @@ const BottomNavigation = () => {
         alignItems: 'center',
         height: '100%',
         width: '100%',
-        padding: '0 10px', // Consistent padding
+        padding: padding, // Dynamic padding
         position: 'relative',
         boxSizing: 'border-box',
       },
@@ -64,7 +102,7 @@ const BottomNavigation = () => {
         alignItems: 'center',
         justifyContent: 'center',
         width: sideButtonWidth,
-        padding: isSmallScreen ? '4px' : '6px',
+        padding: isExtraSmallScreen ? '2px' : isSmallScreen ? '3px' : '4px',
         color: '#666',
         transition: 'color 0.2s',
         background: 'none',
@@ -75,11 +113,19 @@ const BottomNavigation = () => {
         color: '#3b82f6',
       },
       navItemIcon: {
-        fontSize: isSmallScreen ? '1rem' : '1.25rem',
-        marginBottom: isSmallScreen ? '0.125rem' : '0.25rem',
+        fontSize: isExtraSmallScreen
+          ? '0.875rem'
+          : isSmallScreen
+          ? '1rem'
+          : '1.25rem',
+        marginBottom: isExtraSmallScreen ? '0.1rem' : '0.125rem',
       },
       navItemLabel: {
-        fontSize: isSmallScreen ? '0.65rem' : '0.75rem',
+        fontSize: isExtraSmallScreen
+          ? '0.6rem'
+          : isSmallScreen
+          ? '0.65rem'
+          : '0.75rem',
         marginTop: '0.125rem',
         fontWeight: 500,
         display: 'block',
@@ -97,9 +143,15 @@ const BottomNavigation = () => {
         cursor: 'pointer',
       },
       centerIcon: {
-        fontSize: isSmallScreen ? '4.5rem' : '5rem', // Increased from 4rem/4.5rem (72px/80px)
+        fontSize: centerIconSize,
         color: '#fff',
-        marginTop: isSmallScreen ? '-0.25rem' : '-0.5rem', // Slight upward shift
+        marginTop: isExtraSmallScreen
+          ? '-0.15rem'
+          : isSmallScreen
+          ? '-0.2rem'
+          : isMediumScreen
+          ? '-0.25rem'
+          : '-0.5rem', // Slight upward shift
       }
     };
   };
@@ -136,7 +188,7 @@ const BottomNavigation = () => {
           );
         })}
 
-        {/* Center Circle Button with Larger and Slightly Upper "+" */}
+        {/* Center Circle Button */}
         <button
           style={styles.centerButton}
           onClick={() => handleNavigation(navConfig.properties.path)}
