@@ -19,6 +19,8 @@ import NotFound from '../pages/NotFound';
 import ResetPassword from '../pages/ResetPassword';
 import Calendar from '../pages/Calendar';
 import CreateRoom from '../pages/CreateRoom';
+import Add from '../pages/Add';
+import CreateBooking from '../pages/CreateBooking';
 
 /**
  * Protected Route Component
@@ -79,6 +81,15 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+      <Route 
+        path="/booking/create" 
+        element={
+          <ProtectedRoute>
+            <CreateBooking />
+          </ProtectedRoute>
+        } 
+      />
+      
       
       <Route 
         path="/calendar" 
@@ -116,10 +127,10 @@ const AppRoutes = () => {
       />
       
       <Route 
-        path="/properties" 
+        path="/add" 
         element={
           <ProtectedRoute>
-            <Properties />
+            <Add />
           </ProtectedRoute>
         } 
       />

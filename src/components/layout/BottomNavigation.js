@@ -27,9 +27,9 @@ const BottomNavigation = () => {
       path: '/calendar',
     },
     properties: {
-      label: 'Properties',
+      label: 'Add',
       icon: '🏠',
-      path: '/properties',
+      path: '/add',
     },
     notifications: {
       label: 'Alerts',

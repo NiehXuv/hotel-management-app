@@ -7,7 +7,7 @@ dotenv.config(); // Load environment variables
 const { sendResetEmail } = require('./components/Account/sendresetemail');
 const { resetPassword } = require('./components/Account/resetpassword');
 const { listAllBookings } = require('./components/Booking/listAllBooking');
-
+const { createBooking } = require('./components/Booking/createBooking');
 // Room functions
 const { createRoom, getHotelIds} = require('./components/Room/createRoom');
 const { updateRoomStatus } = require('./components/Room/updateRoomStatus');
@@ -29,7 +29,7 @@ app.use(cors());
 app.post('/api/send-reset-email', sendResetEmail);
 app.post('/api/reset-password', resetPassword);
 app.get('/booking/list', listAllBookings);
-
+app.post('/booking/create', createBooking);
 // Room routes
 app.get('/api/hotels/ids', getHotelIds);
 app.post('/api/rooms/:hotelId', createRoom);

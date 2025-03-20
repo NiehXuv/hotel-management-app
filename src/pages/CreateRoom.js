@@ -133,8 +133,7 @@ const CreateRoom = () => {
 
   const styles = {
     container: {
-      maxWidth: '100%',
-      width: '100%',
+      width: '400px',
       margin: '0 auto',
       padding: '1rem',
       paddingBottom: 'calc(1rem + var(--footer-height))',
