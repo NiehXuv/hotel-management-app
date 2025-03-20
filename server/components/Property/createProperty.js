@@ -44,11 +44,11 @@ const createProperty = async (req, res) => {
 
         const hotelRef = ref(database, `Hotel/${newHotelId}`);
         await set(hotelRef, {
-            name,
-            description,
-            location,
-            email,
-            phoneNumber,
+            Name: name,
+            Description: description,
+            Location: location,
+            Email: email,
+            PhoneNumber: phoneNumber,
         });
 
         return res.status(201).json({
