@@ -22,7 +22,6 @@ import CreateRoom from '../pages/CreateRoom';
 import Add from '../pages/Add';
 import CreateBooking from '../pages/CreateBooking';
 import Customer from '../pages/Customer';
-import Booking from '../pages/Booking';
 
 /**
  * Protected Route Component
@@ -100,7 +99,17 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
+
+      <Route 
+        path="/hotel/create" 
+        element={
+          <ProtectedRoute>
+            <CreateProperty />
+          </ProtectedRoute>
+        } 
+      />
       
+
       <Route 
         path="/customer" 
         element={

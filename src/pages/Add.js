@@ -56,6 +56,7 @@ const Add = () => {
             </option>
             <option value="/hotel/createroom">Create Room</option>
             <option value="/booking/create">Create Booking</option>
+            <option value="/hotel/create">Create Property</option>
           </select>
         </div>
       </Card>
