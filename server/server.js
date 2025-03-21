@@ -26,6 +26,8 @@ const { updateCustomer } = require('./components/Customer/updateCustomer');
 
 //Staff
 const { listStaff } = require('./components/Staff/listStaff');
+const { updateBooking } = require('./components/Booking/updateBooking');
+const { removeBooking } = require('./components/Booking/removeBooking');
 
 //////////////////
 const app = express();
@@ -39,6 +41,9 @@ app.post('/api/send-reset-email', sendResetEmail);
 app.post('/api/reset-password', resetPassword);
 app.get('/booking/list', listAllBookings);
 app.post('/booking/create', createBooking);
+app.put('/booking/:bookingId', updateBooking);
+app.delete('/booking/:bookingId', removeBooking);
+
 // Room routes
 app.get('/api/hotels/ids', getHotelIds);
 app.post('/api/rooms/:hotelId', createRoom);

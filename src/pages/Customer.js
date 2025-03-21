@@ -17,6 +17,7 @@ const Customers = () => {
     PhoneNumber: '',
     Note: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const navigate = useNavigate();
 
@@ -34,8 +35,6 @@ const Customers = () => {
         });
 
         const data = await response.json();
-        console.log('API Response (List):', data);
-
         if (response.ok) {
           const customerArray = Object.keys(data).map((key) => ({
             id: key,
@@ -48,7 +47,6 @@ const Customers = () => {
         }
       } catch (err) {
         setError(`Network error: ${err.message}`);
-        console.error('Fetch error (List):', err);
         setCustomers([]);
       } finally {
         setLoading(false);
@@ -56,6 +54,13 @@ const Customers = () => {
     };
     fetchCustomers();
   }, []);
+
+  // Filter customers based on search query
+  const filteredCustomers = customers.filter((customer) => {
+    const fullName = `${customer.FirstName || ''} ${customer.LastName || ''}`.toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return fullName.includes(query);
+  });
 
   // Show success message and auto-hide after 3 seconds
   const showSuccessMessage = (message) => {
@@ -72,13 +77,10 @@ const Customers = () => {
   // Handle customer creation
   const handleCreateCustomer = async (e) => {
     e.preventDefault();
-
-    // Client-side validation for FirstName
-    if (!formData.FirstName || formData.FirstName.trim() === "") {
-      showErrorMessage("FirstName is required and must be a non-empty string");
+    if (!formData.FirstName || formData.FirstName.trim() === '') {
+      showErrorMessage('FirstName is required and must be a non-empty string');
       return;
     }
-
     try {
       const response = await fetch('http://localhost:5000/customer/create', {
         method: 'POST',
@@ -87,39 +89,23 @@ const Customers = () => {
         },
         body: JSON.stringify(formData),
       });
-
-      const contentType = response.headers.get('Content-Type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Create Response (Non-JSON):', text);
-        throw new Error('Server did not return JSON. Check the endpoint or server configuration.');
-      }
-
       const data = await response.json();
       if (response.ok) {
         setCustomers([...customers, { id: data.customerId, ...formData }]);
         setIsCreateModalOpen(false);
-        setFormData({
-          FirstName: '',
-          LastName: '',
-          Email: '',
-          PhoneNumber: '',
-          Note: '',
-        });
+        setFormData({ FirstName: '', LastName: '', Email: '', PhoneNumber: '', Note: '' });
         showSuccessMessage('Create Successful');
       } else {
         showErrorMessage(data.error || 'Failed to create customer');
       }
     } catch (err) {
       showErrorMessage(`Network error: ${err.message}`);
-      console.error('Create error:', err);
     }
   };
 
   // Handle customer removal
   const handleRemoveCustomer = async (customerId) => {
     if (!window.confirm(`Are you sure you want to delete customer ${customerId}?`)) return;
-
     try {
       const response = await fetch(`http://localhost:5000/customer/delete/${customerId}`, {
         method: 'DELETE',
@@ -127,14 +113,6 @@ const Customers = () => {
           'Content-Type': 'application/json',
         },
       });
-
-      const contentType = response.headers.get('Content-Type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Delete Response (Non-JSON):', text);
-        throw new Error('Server did not return JSON. Check the endpoint or server configuration.');
-      }
-
       const data = await response.json();
       if (response.ok) {
         setCustomers(customers.filter((customer) => customer.id !== customerId));
@@ -144,7 +122,6 @@ const Customers = () => {
       }
     } catch (err) {
       showErrorMessage(`Network error: ${err.message}`);
-      console.error('Delete error:', err);
     }
   };
 
@@ -173,15 +150,11 @@ const Customers = () => {
   // Handle form submission to update the customer
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
-
-    // Client-side validation for FirstName
-    if (!formData.FirstName || formData.FirstName.trim() === "") {
-      showErrorMessage("FirstName is required and must be a non-empty string");
+    if (!formData.FirstName || formData.FirstName.trim() === '') {
+      showErrorMessage('FirstName is required and must be a non-empty string');
       return;
     }
-
     if (!selectedCustomer) return;
-
     try {
       const response = await fetch(`http://localhost:5000/customer/update/${selectedCustomer.id}`, {
         method: 'PUT',
@@ -190,14 +163,6 @@ const Customers = () => {
         },
         body: JSON.stringify(formData),
       });
-
-      const contentType = response.headers.get('Content-Type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Update Response (Non-JSON):', text);
-        throw new Error('Server did not return JSON. Check the endpoint or server configuration.');
-      }
-
       const data = await response.json();
       if (response.ok) {
         setCustomers(
@@ -207,47 +172,28 @@ const Customers = () => {
         );
         setIsUpdateModalOpen(false);
         setSelectedCustomer(null);
-        setFormData({
-          FirstName: '',
-          LastName: '',
-          Email: '',
-          PhoneNumber: '',
-          Note: '',
-        });
+        setFormData({ FirstName: '', LastName: '', Email: '', PhoneNumber: '', Note: '' });
         showSuccessMessage('Update Successful');
       } else {
         showErrorMessage(data.error || 'Failed to update customer');
       }
     } catch (err) {
       showErrorMessage(`Network error: ${err.message}`);
-      console.error('Update error:', err);
     }
   };
 
   // Open the create modal
   const openCreateModal = () => {
-    setFormData({
-      FirstName: '',
-      LastName: '',
-      Email: '',
-      PhoneNumber: '',
-      Note: '',
-    });
+    setFormData({ FirstName: '', LastName: '', Email: '', PhoneNumber: '', Note: '' });
     setIsCreateModalOpen(true);
   };
 
-  // Close the modals
+  // Close the modals and reset form data
   const closeModal = () => {
     setIsCreateModalOpen(false);
     setIsUpdateModalOpen(false);
     setSelectedCustomer(null);
-    setFormData({
-      FirstName: '',
-      LastName: '',
-      Email: '',
-      PhoneNumber: '',
-      Note: '',
-    });
+    setFormData({ FirstName: '', LastName: '', Email: '', PhoneNumber: '', Note: '' });
   };
 
   const styles = {
@@ -262,6 +208,40 @@ const Customers = () => {
     },
     title: {
       textAlign: 'center',
+    },
+    searchContainer: {
+      width: '80%',
+      margin: 'auto',
+      position: 'relative',
+      marginBottom: '2rem',
+    },
+    searchInput: {
+      padding: '0.5rem',
+      width: '100%',
+      border: '1px solid #e5e7eb',
+      borderRadius: '0.25rem',
+      fontSize: '0.875rem',
+    },
+    suggestions: {
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      backgroundColor: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: '0.25rem',
+      zIndex: 10,
+      width: '100%',
+      maxHeight: '200px',
+      overflowY: 'auto',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+    },
+    suggestionItem: {
+      padding: '0.5rem',
+      cursor: 'pointer',
+      color: '#374151',
+    },
+    suggestionItemHover: {
+      backgroundColor: '#f3f4f6',
     },
     createButton: {
       display: 'block',
@@ -414,11 +394,6 @@ const Customers = () => {
       borderRadius: '0.25rem',
       fontSize: '0.875rem',
       color: '#374151',
-      outline: 'none',
-      transition: 'border-color 0.3s ease',
-    },
-    formInputFocus: {
-      borderColor: '#3b82f6',
     },
     formButton: {
       padding: '0.5rem 1rem',
@@ -428,37 +403,51 @@ const Customers = () => {
       borderRadius: '0.25rem',
       fontSize: '0.875rem',
       cursor: 'pointer',
-      transition: 'background-color 0.3s ease',
-    },
-    formButtonHover: {
-      backgroundColor: '#2563eb',
     },
   };
 
   return (
-    <div
-      style={styles.container}
-      className="sm:max-w-md mx-auto mt-6 px-4 overflow-y-auto"
-    >
+    <div style={styles.container} className="sm:max-w-md mx-auto mt-6 px-4 overflow-y-auto">
       <h2 style={styles.title} className="text-xl font-bold text-neutral-800 mb-4">
         Customer List
       </h2>
 
-      
+      {/* Search Bar with Recommendations */}
+      <div style={styles.searchContainer}>
+        <input
+          type="text"
+          placeholder="Search by name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={styles.searchInput}
+        />
+        {searchQuery && (
+          <div style={styles.suggestions}>
+            {filteredCustomers.slice(0, 5).map((customer) => (
+              <div
+                key={customer.id}
+                style={styles.suggestionItem}
+                onClick={() => setSearchQuery(`${customer.FirstName} ${customer.LastName}`)}
+                onMouseEnter={(e) => (e.target.style.backgroundColor = styles.suggestionItemHover.backgroundColor)}
+                onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+              >
+                {customer.FirstName} {customer.LastName}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
+      {/* Customer List */}
       {loading ? (
         <p style={styles.loadingText}>Loading customers...</p>
-      ) : customers.length === 0 ? (
+      ) : filteredCustomers.length === 0 ? (
         <p style={styles.noData} className="text-sm">
-          No customers found.
+          {searchQuery ? 'No matching customers' : 'No customers found.'}
         </p>
       ) : (
-        customers.map((customer) => (
-          <Card
-            key={customer.id}
-            style={styles.customerCard}
-            className="rounded-lg"
-          >
+        filteredCustomers.map((customer) => (
+          <Card key={customer.id} style={styles.customerCard} className="rounded-lg">
             <div style={styles.customerInfo}>
               <div style={styles.infoRow}>
                 <span style={styles.label}>First Name: </span>
@@ -514,20 +503,16 @@ const Customers = () => {
       </button>
 
       {/* Success Message */}
-      {successMessage && (
-        <p style={styles.successMessage}>{successMessage}</p>
-      )}
+      {successMessage && <p style={styles.successMessage}>{successMessage}</p>}
 
       {/* Error Message */}
-      {error && (
-        <p style={styles.errorMessage}>{error}</p>
-      )}
-      
+      {error && <p style={styles.errorMessage}>{error}</p>}
+
       {/* Create Customer Modal */}
       {isCreateModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
-            <button style={styles.modalCloseButton} onClick={closeModal}>
+            <button style={styles.modalCloseButton} onClick={closeModal} aria-label="Close">
               ×
             </button>
             <h3 style={styles.modalHeader}>Create New Customer</h3>
@@ -540,8 +525,6 @@ const Customers = () => {
                   value={formData.FirstName}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                   required
                 />
               </div>
@@ -553,8 +536,6 @@ const Customers = () => {
                   value={formData.LastName}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
               <div style={styles.formGroup}>
@@ -565,8 +546,6 @@ const Customers = () => {
                   value={formData.Email}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
               <div style={styles.formGroup}>
@@ -577,8 +556,6 @@ const Customers = () => {
                   value={formData.PhoneNumber}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
               <div style={styles.formGroup}>
@@ -589,16 +566,9 @@ const Customers = () => {
                   value={formData.Note}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
-              <button
-                type="submit"
-                style={styles.formButton}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = styles.formButtonHover.backgroundColor)}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = styles.formButton.backgroundColor)}
-              >
+              <button type="submit" style={styles.formButton}>
                 Create Customer
               </button>
             </form>
@@ -610,7 +580,7 @@ const Customers = () => {
       {isUpdateModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
-            <button style={styles.modalCloseButton} onClick={closeModal}>
+            <button style={styles.modalCloseButton} onClick={closeModal} aria-label="Close">
               ×
             </button>
             <h3 style={styles.modalHeader}>Update Customer</h3>
@@ -623,8 +593,6 @@ const Customers = () => {
                   value={formData.FirstName}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                   required
                 />
               </div>
@@ -636,8 +604,6 @@ const Customers = () => {
                   value={formData.LastName}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
               <div style={styles.formGroup}>
@@ -648,8 +614,6 @@ const Customers = () => {
                   value={formData.Email}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
               <div style={styles.formGroup}>
@@ -660,8 +624,6 @@ const Customers = () => {
                   value={formData.PhoneNumber}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
               <div style={styles.formGroup}>
@@ -672,16 +634,9 @@ const Customers = () => {
                   value={formData.Note}
                   onChange={handleInputChange}
                   style={styles.formInput}
-                  onFocus={(e) => (e.target.style.borderColor = styles.formInputFocus.borderColor)}
-                  onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
                 />
               </div>
-              <button
-                type="submit"
-                style={styles.formButton}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = styles.formButtonHover.backgroundColor)}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = styles.formButton.backgroundColor)}
-              >
+              <button type="submit" style={styles.formButton}>
                 Save Changes
               </button>
             </form>
