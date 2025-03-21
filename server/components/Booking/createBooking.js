@@ -73,11 +73,11 @@ const createBooking = async (req, res) => {
         // Call createCustomer to get or create customerId
         const customerReq = {
             body: {
-                email: "", // Placeholder; update when available
-                firstName: firstName,
-                lastName: lastName,
-                phoneNumber: "", // Placeholder; update when available
-                note: ""
+                Email: "", // Placeholder; update when available
+                FirstName: firstName,
+                LastName: lastName,
+                PhoneNumber: "", // Placeholder; update when available
+                Note: ""
             }
         };
         const customerRes = {

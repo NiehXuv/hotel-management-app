@@ -74,9 +74,15 @@ const Booking = () => {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
         });
+  
         const data = await response.json();
-        if (data.success) {
+        console.log('Delete Response:', response.status, data); // Debug the response
+  
+        if (response.ok) {
+          // Update the state to remove the deleted booking
           setBookings(bookings.filter(booking => booking.id !== bookingId));
+          setSuccessMessage('Booking deleted successfully'); // Optional success message
+          setTimeout(() => setSuccessMessage(''), 3000); // Clear success message after 3 seconds
           closeModal();
         } else {
           setError(data.error || 'Failed to delete booking');
@@ -119,9 +125,9 @@ const Booking = () => {
         setTimeout(() => {
           closeModal();
           window.location.reload(); // Refresh the page to load updated content
-        }, 3000);
+        }, 1000);
         setSuccessMessage('Update Successfully');
-        setTimeout(() => setSuccessMessage(''), 6000);
+        setTimeout(() => setSuccessMessage(''), 4000);
       } else {
         setError(data.error || 'Failed to update booking');
       }
@@ -278,7 +284,7 @@ const Booking = () => {
         <input
           type="text"
           name="search"
-          placeholder="Search by booking ID, customer name"
+          placeholder="Search by Hotel, Room name"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full p-2 mb-4 border border-neutral-300 rounded text-sm"
