@@ -22,6 +22,9 @@ import CreateRoom from '../pages/CreateRoom';
 import Add from '../pages/Add';
 import CreateBooking from '../pages/CreateBooking';
 import Customer from '../pages/Customer';
+import CreateProperty from '../pages/CreateProperty';
+import Booking from '../pages/Booking';
+
 
 /**
  * Protected Route Component
