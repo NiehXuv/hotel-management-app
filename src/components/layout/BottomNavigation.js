@@ -14,7 +14,7 @@ const BottomNavigation = () => {
     tasks: { label: 'Calendar', icon: '📅', path: '/calendar' },
     properties: { label: 'Add', icon: '🏠', path: '/add' },
     notifications: { label: 'Alerts', icon: '🔔', path: '/notifications' },
-    users: { label: 'Users', icon: '👥', path: '/users' },
+    users: { label: 'Menu', icon: '☰', path: '/users' },
     reports: { label: 'Reports', icon: '📈', path: '/reports' },
     settings: { label: 'Settings', icon: '⚙️', path: '/settings' },
   };

@@ -9,7 +9,6 @@ const Calendar = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState([]);
   const navigate = useNavigate();
-  const DAY_START_HOUR = 7;
 
   useEffect(() => {
     fetchBookings();
@@ -60,63 +59,23 @@ const Calendar = () => {
     return timeSlots;
   };
 
-  const assignColumns = (slots) => {
-    const sortedSlots = [...slots].sort((a, b) => a.startTotalMinutes - b.startTotalMinutes);
-    const columns = [];
-
-    sortedSlots.forEach(slot => {
-      let placed = false;
-      for (let col of columns) {
-        const lastBooking = col[col.length - 1];
-        if (lastBooking.endTotalMinutes <= slot.startTotalMinutes) {
-          col.push(slot);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        columns.push([slot]);
-      }
-    });
-
-    const slotToColumn = {};
-    columns.forEach((col, colIndex) => {
-      col.forEach(slot => {
-        slotToColumn[slot.id] = colIndex;
-      });
-    });
-
-    return { columns, slotToColumn, maxColumns: columns.length };
-  };
-
   const bookedTimeSlots = getBookingsForDate(currentDate).map(booking => {
     const startTime = booking.eta;
-    const endTime = booking.etd;
-    const startHour = parseInt(startTime.split(':')[0], 10) || 0;
-    const startMinute = parseInt(startTime.split(':')[1], 10) || 0;
-    const endHour = parseInt(endTime.split(':')[0], 10) || startHour + 1;
-    const endMinute = parseInt(endTime.split(':')[1], 10) || 0;
-
+    const [hourStr, minuteStr] = startTime.split(':');
+    const startHour = parseInt(hourStr, 10);
+    const startMinute = parseInt(minuteStr, 10);
     const startTotalMinutes = startHour * 60 + startMinute;
-    const endTotalMinutes = endHour * 60 + endMinute;
-    const durationMinutes = endTotalMinutes - startTotalMinutes || 60;
-
-    const roomType = booking.roomId.includes("Meeting") ? "meeting" : "hotel";
     const color = booking.paymentStatus === "Paid"
       ? '#90EE90'
       : booking.paymentStatus === "Unpaid"
       ? '#ADD8E6'
       : '#E0F2F1';
-
     return {
-      id: booking.id || `${startTime}-${endTime}-${booking.customerId}`, // Ensure unique ID
-      time: `${startTime} - ${endTime}`,
+      id: booking.id || `${startTime}-${booking.customerId}`,
       booking,
       startTotalMinutes,
-      endTotalMinutes,
-      durationMinutes,
-      color,
-      startHour: Math.floor(startTotalMinutes / 60),
+      startHour,
+      color
     };
   });
 
@@ -133,6 +92,7 @@ const Calendar = () => {
   const formattedMonth = currentDate.toLocaleString('default', { month: 'long' });
 
   return (
+    
     <div style={styles.scheduleContainer}>
       <h3 style={styles.monthTitle}>{formattedMonth}</h3>
       <Card className="day-selector-card" style={styles.dayCard}>
@@ -165,48 +125,35 @@ const Calendar = () => {
         <div style={styles.schedule}>
           {generateTimeSlots().map((time, index) => {
             const hour = parseInt(time.split(':')[0], 10) + (time.includes('pm') && time.split(':')[0] !== '12' ? 12 : 0);
-            const hourStartMinutes = hour * 60;
             const slotsInHour = bookedTimeSlots.filter(slot => slot.startHour === hour);
-            const { slotToColumn, maxColumns } = slotsInHour.length > 0
-              ? assignColumns(slotsInHour)
-              : { slotToColumn: {}, maxColumns: 1 };
-
             return (
               <div key={index} style={styles.timeSlotContainer}>
                 <span style={styles.timeLabel}>{time}</span>
-                <div style={{ ...styles.timeSlotWrapper, position: 'relative' }}>
-                  {slotsInHour.map(slot => {
-                    const column = slotToColumn[slot.id] || 0;
-                    const width = 100 / maxColumns;
-                    const left = column * width;
-                    const top = (slot.startTotalMinutes - hourStartMinutes);
-
-                    return (
-                      <div
-                        key={slot.id}
-                        style={{
-                          ...styles.timeSlot,
-                          height: `${slot.durationMinutes}px`,
-                          width: `${width}%`,
-                          left: `${left}%`,
-                          top: `${top}px`,
-                          backgroundColor: slot.color,
-                          position: 'absolute',
-                        }}
-                        onClick={() => handleTimeSlotClick(slot.booking)}
-                      >
-                        <span style={styles.time}>{slot.time}</span>
-                        <div style={styles.bookingDetails}>
-                          <p>{slot.booking.customerId}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div style={styles.timeSlotWrapper}>
+                  {slotsInHour.map(slot => (
+                    <div
+                      key={slot.id}
+                      style={{...styles.bookingCard,
+                        backgroundColor: slot.color,
+                      }
+              }
+                      onClick={() => handleTimeSlotClick(slot.booking)}
+                    >
+                      <div>Room ID: {slot.booking.roomId}</div>
+                      <div>{slot.booking.customerId}</div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
           })}
         </div>
+        <button
+  style={styles.allBooking}
+  onClick={() => navigate('/booking')}
+>
+  All Booking
+</button>
       </Card>
       {showModal && (
         <div style={styles.modal}>
@@ -230,6 +177,7 @@ const Calendar = () => {
             ) : null}
           </div>
         </div>
+        
       )}
       <BottomNav />
     </div>
@@ -279,8 +227,9 @@ const styles = {
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
   selectedDay: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#ADD8E6', // Existing blue highlight
     color: '#fff',
+    fontWeight: 'bold', // Added to emphasize the selected date
   },
   weekday: {
     fontSize: '12px',
@@ -308,37 +257,51 @@ const styles = {
   timeSlotContainer: {
     display: 'flex',
     alignItems: 'flex-start',
-    minHeight: '60px',
-    position: 'relative',
+    minHeight: '50px',
   },
   timeLabel: {
     width: '80px',
-    fontSize: '14px',
-    color: '#666',
+    fontSize: '16px', // Increased from '14px'
+    color: '#333', // Changed from light gray to dark gray
     textAlign: 'right',
     marginRight: '10px',
     paddingTop: '10px',
   },
   timeSlotWrapper: {
+    display: 'flex',
+    flexDirection: 'row',
+    overflowX: 'auto',
+    minHeight: '50px',
     flex: 1,
-    position: 'relative',
-    minHeight: '60px',
+    WebkitOverflowScrolling: 'touch', // Improves scrolling on mobile
+    scrollbarWidth: 'thin', // For Firefox
+    '&::-webkit-scrollbar': {
+      height: '8px',
+    },
+    '&::-webkit-scrollbar-thumb': {
+      backgroundColor: '#888',
+      borderRadius: '4px',
+    },
   },
-  timeSlot: {
-    padding: '10px',
-    margin: '5px 0',
-    borderRadius: '8px',
-    cursor: 'pointer',
+  bookingCard: {
+    flex: '0.8 0.1 12em', // Ensures a fixed width of 12em with no shrinking or growing
+    height: '5em', // Height remains the same
+    margin: '5px',
+    padding: '5px',
+    backgroundColor: '#4a90e2',
+    border: '1px solid rgb(211, 214, 218)',
+    borderRadius: '5px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    fontSize: '16px',
+    color: '',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    position: 'absolute',
-  },
-  time: {
-    fontWeight: 'bold',
-    marginBottom: '5px',
-    display: 'block',
-  },
-  bookingDetails: {
-    marginTop: '5px',
+    textAlign: 'center',
   },
   noBooking: {
     textAlign: 'center',
@@ -369,15 +332,31 @@ const styles = {
     fontSize: '20px',
   },
   modalTitle: {
-    fontSize: '18px',
+    fontSize: '20px', // Increased for prominence
     fontWeight: 'bold',
-    marginBottom: '10px',
+    marginBottom: '15px', // Added spacing below the title
+  },
+  bookingDetails: {
+    marginTop: '10px', // Increased spacing
+    fontSize: '16px', // Added for better readability
   },
   separator: {
     height: '1px',
     backgroundColor: '#ccc',
     margin: '10px 0',
   },
+  allBooking: {
+    margin: '10px auto',
+    display: 'block',
+    padding: '10px 20px',
+    backgroundColor: '#ADD8E6',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '5px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    textAlign: 'center',
+  }
 };
 
 export default Calendar;
