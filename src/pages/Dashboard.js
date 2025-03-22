@@ -72,7 +72,7 @@ const Dashboard = () => {
     switch (userRole) {
       case 'boss':
       case 'manager':
-        
+        return <BossManagerDashboard statistics={statistics} />;
       case 'sales':
         return <SalesDashboard statistics={statistics} />;
       case 'accountant':
@@ -83,7 +83,7 @@ const Dashboard = () => {
       case 'host':
         return <CleanerDashboard statistics={statistics} />;
       default:
-        return <BossManagerDashboard statistics={statistics} />;;
+        return <BossManagerDashboard statistics={statistics} />;
     }
   };
   
@@ -91,9 +91,24 @@ const Dashboard = () => {
   const hasAccess = (section) => {
     return dashboardAccess.includes(section);
   };
-  
+
+  // Dynamic width and margin to match BottomNavigation
+  const getContainerStyles = () => {
+    const windowWidth = window.innerWidth;
+    const isLargeScreen = windowWidth > 480;
+
+    return {
+      width: '100%',
+      maxWidth: isLargeScreen ? '480px' : '100%',
+      margin: isLargeScreen ? '0 auto' : '0',
+      paddingBottom: '70px', // To ensure content isn't hidden behind BottomNavigation
+      boxSizing: 'border-box',
+      minHeight: '100vh', // Ensure full viewport height
+    };
+  };
+
   return (
-    <div className="page-container pb-6">
+    <div className="page-container" style={getContainerStyles()}>
       {/* Greeting */}
       <div className="mb-6">
         <h1 className="text-xl font-bold">Welcome, {currentUser?.name}!</h1>
@@ -106,7 +121,7 @@ const Dashboard = () => {
       {renderRoleSpecificDashboard()}
       
       {/* Tasks Section */}
-      {/* {hasAccess('tasks') && (
+      {hasAccess('tasks') && (
         <Card
           header={
             <div className="flex justify-between items-center">
@@ -147,7 +162,7 @@ const Dashboard = () => {
             <p className="text-center py-4 text-neutral-500">No tasks available</p>
           )}
         </Card>
-      )} */}
+      )}
       
       {/* Notifications Section */}
       <Card
