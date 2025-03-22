@@ -216,7 +216,7 @@ const styles = {
     margin: 'auto',
     padding: '1em',
     backgroundColor: '#f9f9f9',
-    maxWidth: '99%',
+    width: '30em',
     minHeight: '100vh',
     touchAction: 'pan-y',
   },
