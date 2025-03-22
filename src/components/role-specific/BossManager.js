@@ -13,10 +13,10 @@ import Button from '../common/Button';
 const BossManagerDashboard = ({ statistics }) => {
   const navigate = useNavigate();
   
-  // Navigate to create task page
-  const handleCreateTask = () => {
-    navigate('/tasks/create');
-  };
+  // Navigate to create task page - Not implemented yet
+  // const handleCreateTask = () => {
+  //   navigate('/tasks/create');
+  // };
   
   // Navigate to properties page
   const handleViewProperties = () => {
@@ -37,14 +37,15 @@ const BossManagerDashboard = ({ statistics }) => {
     <div className="mb-6">
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 mb-6">
-        <Button 
+        
+        {/* <Button 
           variant="primary" 
           onClick={handleCreateTask}
           className="flex items-center justify-center"
         >
           <span className="mr-2">✏️</span>
           Create Task
-        </Button>
+        </Button> */}
         
         <Button 
           variant="outline" 
@@ -134,8 +135,9 @@ const BossManagerDashboard = ({ statistics }) => {
         </Button>
       </Card>
       
-      {/* Staff Section - Only for Boss */}
-      <Card
+          
+      {/* Staff Section - Only for Boss */} 
+      {/* <Card
         header={<h2 className="text-lg font-semibold">Staff Overview</h2>}
         className="mb-4"
       >
@@ -179,7 +181,8 @@ const BossManagerDashboard = ({ statistics }) => {
         >
           Manage Staff
         </Button>
-      </Card>
+      </Card> */}
+      
     </div>
   );
 };
