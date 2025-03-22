@@ -25,6 +25,7 @@ import Customer from '../pages/Customer';
 import CreateProperty from '../pages/CreateProperty';
 import Booking from '../pages/Booking';
 import Menu from '../pages/Menu';
+import Property from '../pages/Property'; // Already imported, no change needed here
 
 /**
  * Protected Route Component
@@ -55,7 +56,6 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-     
 
       {/* Protected Routes */}
       <Route 
@@ -66,7 +66,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
       
       <Route 
         path="/dashboard" 
@@ -119,7 +118,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-
 
       <Route 
         path="/customer" 
@@ -224,6 +222,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Add Property Route Here */}
+      <Route 
+        path="/property" 
+        element={
+          <ProtectedRoute>
+            <Property />
           </ProtectedRoute>
         } 
       />

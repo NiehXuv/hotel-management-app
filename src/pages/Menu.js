@@ -6,7 +6,7 @@ const Menu = () => {
   // Define an array of menu items with labels and paths
   const menuItems = [
     { label: 'Add New', path: '/add' },
-    { label: 'Properties Setting', path: '/properties' },
+    { label: 'Properties Setting', path: '/property' },
     { label: 'Customer Setting', path: '/customer' },
     { label: 'Booking Setting', path: '/booking' },
     { label: 'User Setting', path: '/user' },
