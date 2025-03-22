@@ -24,7 +24,7 @@ import CreateBooking from '../pages/CreateBooking';
 import Customer from '../pages/Customer';
 import CreateProperty from '../pages/CreateProperty';
 import Booking from '../pages/Booking';
-
+import Menu from '../pages/Menu';
 
 /**
  * Protected Route Component
@@ -111,7 +111,15 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+      <Route 
+        path="/menu" 
+        element={
+          <ProtectedRoute>
+            <Menu />
+          </ProtectedRoute>
+        } 
+      />
+
 
       <Route 
         path="/customer" 
