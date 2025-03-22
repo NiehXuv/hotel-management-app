@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/layout/BottomNavigation';
 import Card from '../components/common/Card';
@@ -9,6 +9,7 @@ const Calendar = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedBookings, setSelectedBookings] = useState([]);
   const navigate = useNavigate();
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     fetchBookings();
@@ -89,12 +90,39 @@ const Calendar = () => {
     setSelectedBookings([]);
   };
 
+  const handleBack = () => {
+    navigate('/dashboard');
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const swipeDistance = touchEndX - touchStartX.current;
+    const minSwipeDistance = 100;
+
+    if (swipeDistance > minSwipeDistance) {
+      navigate('/dashboard');
+    }
+  };
+
   const formattedMonth = currentDate.toLocaleString('default', { month: 'long' });
 
   return (
-    
-    <div style={styles.scheduleContainer}>
-      <h3 style={styles.monthTitle}>{formattedMonth}</h3>
+    <div
+      style={styles.scheduleContainer}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <div style={styles.headerContainer}>
+        <button style={styles.backButton} onClick={handleBack}>
+          ←
+        </button>
+        <h3 style={styles.monthTitle}>{formattedMonth}</h3>
+      </div>
+
       <Card className="day-selector-card" style={styles.dayCard}>
         <div style={styles.daySelectorContainer}>
           <button style={styles.navButton} onClick={() => handleDayChange(-7)}>‹</button>
@@ -133,10 +161,10 @@ const Calendar = () => {
                   {slotsInHour.map(slot => (
                     <div
                       key={slot.id}
-                      style={{...styles.bookingCard,
+                      style={{
+                        ...styles.bookingCard,
                         backgroundColor: slot.color,
-                      }
-              }
+                      }}
                       onClick={() => handleTimeSlotClick(slot.booking)}
                     >
                       <div>Room ID: {slot.booking.roomId}</div>
@@ -149,11 +177,11 @@ const Calendar = () => {
           })}
         </div>
         <button
-  style={styles.allBooking}
-  onClick={() => navigate('/booking')}
->
-  All Booking
-</button>
+          style={styles.allBooking}
+          onClick={() => navigate('/booking')}
+        >
+          All Booking
+        </button>
       </Card>
       {showModal && (
         <div style={styles.modal}>
@@ -177,7 +205,6 @@ const Calendar = () => {
             ) : null}
           </div>
         </div>
-        
       )}
       <BottomNav />
     </div>
@@ -191,13 +218,33 @@ const styles = {
     backgroundColor: '#f9f9f9',
     width: '30em',
     minHeight: '100vh',
+    touchAction: 'pan-y',
+  },
+  headerContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+    marginBottom: '1em',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#333',
+    padding: '5px 10px',
   },
   monthTitle: {
-    display: 'flex',
-    justifyContent: 'center',
+    flex: 1,
+    textAlign: 'center',
     fontSize: '24px',
     fontWeight: 'bold',
-    margin: '0',
+    margin: 0,
   },
   dayCard: {
     borderRadius: '10px',
@@ -227,9 +274,9 @@ const styles = {
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
   selectedDay: {
-    backgroundColor: '#ADD8E6', // Existing blue highlight
+    backgroundColor: '#ADD8E6',
     color: '#fff',
-    fontWeight: 'bold', // Added to emphasize the selected date
+    fontWeight: 'bold',
   },
   weekday: {
     fontSize: '12px',
@@ -261,8 +308,8 @@ const styles = {
   },
   timeLabel: {
     width: '80px',
-    fontSize: '16px', // Increased from '14px'
-    color: '#333', // Changed from light gray to dark gray
+    fontSize: '16px',
+    color: '#333',
     textAlign: 'right',
     marginRight: '10px',
     paddingTop: '10px',
@@ -273,8 +320,8 @@ const styles = {
     overflowX: 'auto',
     minHeight: '50px',
     flex: 1,
-    WebkitOverflowScrolling: 'touch', // Improves scrolling on mobile
-    scrollbarWidth: 'thin', // For Firefox
+    WebkitOverflowScrolling: 'touch',
+    scrollbarWidth: 'thin',
     '&::-webkit-scrollbar': {
       height: '8px',
     },
@@ -284,8 +331,8 @@ const styles = {
     },
   },
   bookingCard: {
-    flex: '0.8 0.1 12em', // Ensures a fixed width of 12em with no shrinking or growing
-    height: '5em', // Height remains the same
+    flex: '0.8 0.1 12em',
+    height: '5em',
     margin: '5px',
     padding: '5px',
     backgroundColor: '#4a90e2',
@@ -332,13 +379,13 @@ const styles = {
     fontSize: '20px',
   },
   modalTitle: {
-    fontSize: '20px', // Increased for prominence
+    fontSize: '20px',
     fontWeight: 'bold',
-    marginBottom: '15px', // Added spacing below the title
+    marginBottom: '15px',
   },
   bookingDetails: {
-    marginTop: '10px', // Increased spacing
-    fontSize: '16px', // Added for better readability
+    marginTop: '10px',
+    fontSize: '16px',
   },
   separator: {
     height: '1px',
