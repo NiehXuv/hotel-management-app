@@ -106,7 +106,7 @@ const Dashboard = () => {
       {renderRoleSpecificDashboard()}
       
       {/* Tasks Section */}
-      {hasAccess('tasks') && (
+      {/* {hasAccess('tasks') && (
         <Card
           header={
             <div className="flex justify-between items-center">
@@ -147,7 +147,7 @@ const Dashboard = () => {
             <p className="text-center py-4 text-neutral-500">No tasks available</p>
           )}
         </Card>
-      )}
+      )} */}
       
       {/* Notifications Section */}
       <Card
