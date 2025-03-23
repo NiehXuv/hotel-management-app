@@ -175,6 +175,15 @@ const AppRoutes = () => {
       />
       
       <Route 
+        path="/properties" 
+        element={
+          <ProtectedRoute>
+            <Properties />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
         path="/properties/:id" 
         element={
           <ProtectedRoute>
