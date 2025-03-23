@@ -29,7 +29,7 @@ const { removeCustomer } = require('./components/Customer/removeCustomer');
 const { updateCustomer } = require('./components/Customer/updateCustomer');
 
 //Staff
-const { listStaff } = require('./components/Staff/listStaff');
+const { listStaff } = require('./components/Staff/listStaff.js');
 const { updateBooking } = require('./components/Booking/updateBooking');
 const { removeBooking } = require('./components/Booking/removeBooking');
 
