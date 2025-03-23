@@ -7,16 +7,16 @@ import Card from '../components/common/Card';
 const CreateRoom = () => {
   const [roomData, setRoomData] = useState({
     hotelId: '',
-    name: '',
-    description: '',
-    pricebyDay: '',
-    pricebyNight: '',
-    pricebySection: '',
-    roomNumber: '',
+    RoomName: '',
+    Description: '',
+    PriceByDay: '',
+    PriceByNight: '',
+    PriceBySection: '',
+    RoomNumber: '',
   });
   const [hotelIds, setHotelIds] = useState([]);
   const [loadingHotels, setLoadingHotels] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Added for submission loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
@@ -61,16 +61,15 @@ const CreateRoom = () => {
     setRoomData({ ...roomData, [e.target.name]: e.target.value });
   };
 
-  // Added form validation
   const validateForm = () => {
     const errors = {};
     if (!roomData.hotelId) errors.hotelId = 'Please select a property';
-    if (roomData.name.length < 2) errors.name = 'Name must be at least 2 characters';
-    if (roomData.description.length < 10) errors.description = 'Description must be at least 10 characters';
-    if (Number(roomData.pricebyDay) < 0) errors.pricebyDay = 'Price cannot be negative';
-    if (Number(roomData.pricebyNight) < 0) errors.pricebyNight = 'Price cannot be negative';
-    if (Number(roomData.pricebySection) < 0) errors.pricebySection = 'Price cannot be negative';
-    if (!/^\d+$/.test(roomData.roomNumber)) errors.roomNumber = 'Room number must be numeric';
+    if (roomData.RoomName.length < 2) errors.RoomName = 'Name must be at least 2 characters';
+    if (roomData.Description.length < 10) errors.Description = 'Description must be at least 10 characters';
+    if (Number(roomData.PriceByDay) < 0) errors.PriceByDay = 'Price cannot be negative';
+    if (Number(roomData.PriceByNight) < 0) errors.PriceByNight = 'Price cannot be negative';
+    if (Number(roomData.PriceBySection) < 0) errors.PriceBySection = 'Price cannot be negative';
+    if (!/^\d+$/.test(roomData.RoomNumber)) errors.RoomNumber = 'Room number must be numeric';
 
     setError(Object.values(errors)[0] || '');
     return Object.keys(errors).length === 0;
@@ -85,7 +84,7 @@ const CreateRoom = () => {
 
     setIsSubmitting(true);
     try {
-      const { hotelId, name, description, pricebyDay, pricebyNight, pricebySection, roomNumber } = roomData;
+      const { hotelId, RoomName, Description, PriceByDay, PriceByNight, PriceBySection, RoomNumber } = roomData;
 
       const response = await fetch(`http://localhost:5000/api/rooms/${hotelId}`, {
         method: 'POST',
@@ -93,12 +92,12 @@ const CreateRoom = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name,
-          description,
-          pricebyDay,
-          pricebyNight,
-          pricebySection,
-          roomNumber,
+          RoomName,
+          Description,
+          PriceByDay,
+          PriceByNight,
+          PriceBySection,
+          RoomNumber,
         }),
       });
 
@@ -108,12 +107,12 @@ const CreateRoom = () => {
         setSuccessMessage(data.message || 'Room created successfully!');
         setRoomData({
           hotelId: '',
-          name: '',
-          description: '',
-          pricebyDay: '',
-          pricebyNight: '',
-          pricebySection: '',
-          roomNumber: '',
+          RoomName: '',
+          Description: '',
+          PriceByDay: '',
+          PriceByNight: '',
+          PriceBySection: '',
+          RoomNumber: '',
         });
         setTimeout(() => navigate('/dashboard'), 1000);
       } else {
@@ -162,7 +161,7 @@ const CreateRoom = () => {
       color: '#6b7280',
       cursor: 'not-allowed',
     },
-    selectOptionDefault: { // Added for default option styling
+    selectOptionDefault: {
       color: '#6b7280',
       fontStyle: 'italic',
     },
@@ -204,7 +203,6 @@ const CreateRoom = () => {
         bodyClassName="p-4 sm:p-6"
       >
         <form onSubmit={handleCreateRoom} className="space-y-4 sm:space-y-6">
-          {/* Hotel Dropdown */}
           <div>
             <label htmlFor="hotelId" style={styles.label}>
               Property
@@ -235,21 +233,20 @@ const CreateRoom = () => {
                 Select a Property
               </option>
               {hotelIds
-                .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                .sort((a, b) => a.name.localeCompare(b.name))
                 .map((hotel) => (
                   <option key={hotel.id} value={hotel.id}>
-                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)} {/* Capitalize name */}
+                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
                   </option>
                 ))}
             </select>
             {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
           </div>
 
-          {/* Room Name */}
           <Input
-            name="name"
+            name="RoomName"
             label="Room Name"
-            value={roomData.name}
+            value={roomData.RoomName}
             onChange={handleChange}
             required
             placeholder="Enter room name"
@@ -257,11 +254,10 @@ const CreateRoom = () => {
             aria-label="Room Name"
           />
 
-          {/* Description */}
           <Input
-            name="description"
+            name="Description"
             label="Description"
-            value={roomData.description}
+            value={roomData.Description}
             onChange={handleChange}
             required
             placeholder="Enter room description"
@@ -269,12 +265,11 @@ const CreateRoom = () => {
             aria-label="Description"
           />
 
-          {/* Price by Day */}
           <Input
-            name="pricebyDay"
+            name="PriceByDay"
             label="Price by Day"
             type="number"
-            value={roomData.pricebyDay}
+            value={roomData.PriceByDay}
             onChange={handleChange}
             required
             placeholder="Enter price per day"
@@ -282,12 +277,11 @@ const CreateRoom = () => {
             aria-label="Price by Day"
           />
 
-          {/* Price by Night */}
           <Input
-            name="pricebyNight"
+            name="PriceByNight"
             label="Price by Night"
             type="number"
-            value={roomData.pricebyNight}
+            value={roomData.PriceByNight}
             onChange={handleChange}
             required
             placeholder="Enter price per night"
@@ -295,12 +289,11 @@ const CreateRoom = () => {
             aria-label="Price by Night"
           />
 
-          {/* Price by Section */}
           <Input
-            name="pricebySection"
+            name="PriceBySection"
             label="Price by Section"
             type="number"
-            value={roomData.pricebySection}
+            value={roomData.PriceBySection}
             onChange={handleChange}
             required
             placeholder="Enter price per section"
@@ -308,12 +301,11 @@ const CreateRoom = () => {
             aria-label="Price by Section"
           />
 
-          {/* Room Number */}
           <Input
-            name="roomNumber"
+            name="RoomNumber"
             label="Room Number"
             type="text"
-            value={roomData.roomNumber}
+            value={roomData.RoomNumber}
             onChange={handleChange}
             required
             placeholder="Enter room number"
@@ -321,7 +313,6 @@ const CreateRoom = () => {
             aria-label="Room Number"
           />
 
-          {/* Submit Button */}
           <Button
             type="submit"
             variant="primary"
@@ -334,7 +325,6 @@ const CreateRoom = () => {
           </Button>
         </form>
 
-        {/* Success/Error Messages */}
         {successMessage && (
           <p
             style={{ ...styles.message, ...styles.successMessage }}

@@ -1,4 +1,3 @@
-
 const { database } = require("../config/firebaseconfig");
 const { ref, set, get } = require("firebase/database");
 
@@ -42,42 +41,42 @@ const createRoom = async (req, res) => {
     try {
         const { hotelId } = req.params;
         const { 
-            name = '', 
-            description = '', 
-            pricebyDay = 0, 
-            pricebyNight = 0, 
-            pricebySection = 0, 
-            roomNumber 
+            RoomName = '', 
+            Description = '', 
+            PriceByDay = 0, 
+            PriceByNight = 0, 
+            PriceBySection = 0, 
+            RoomNumber 
         } = req.body;
 
-        if (!hotelId || !roomNumber || !name || !description) {
+        if (!hotelId || !RoomNumber || !RoomName || !Description) {
             return res.status(400).json({ 
                 success: false,
                 error: 'All fields are required' 
             });
         }
 
-        if (name.trim().length < 2) {
+        if (RoomName.trim().length < 2) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Name must be at least 2 characters' 
             });
         }
-        if (description.trim().length < 10) {
+        if (Description.trim().length < 10) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Description must be at least 10 characters' 
             });
         }
 
-        if (isNaN(Number(pricebyDay)) || isNaN(Number(pricebyNight)) || isNaN(Number(pricebySection))) {
+        if (isNaN(Number(PriceByDay)) || isNaN(Number(PriceByNight)) || isNaN(Number(PriceBySection))) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Price values must be numeric' 
             });
         }
 
-        const prices = [Number(pricebyDay), Number(pricebyNight), Number(pricebySection)];
+        const prices = [Number(PriceByDay), Number(PriceByNight), Number(PriceBySection)];
         if (prices.some(price => price < 0)) {
             return res.status(400).json({ 
                 success: false,
@@ -94,7 +93,7 @@ const createRoom = async (req, res) => {
             });
         }
 
-        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}`);
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${RoomNumber}`);
         const roomSnapshot = await get(roomRef);
         if (roomSnapshot.exists()) {
             return res.status(400).json({ 
@@ -104,19 +103,19 @@ const createRoom = async (req, res) => {
         }
 
         await set(roomRef, {
-            name: name.trim(),
-            description: description.trim(),
-            pricebyDay: Number(pricebyDay),
-            pricebyNight: Number(pricebyNight),
-            pricebySection: Number(pricebySection),
-            status: 'available',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            RoomName: RoomName.trim(),
+            Description: Description.trim(),
+            PriceByDay: Number(PriceByDay),
+            PriceByNight: Number(PriceByNight),
+            PriceBySection: Number(PriceBySection),
+            Status: 'available',
+            CreatedAt: new Date().toISOString(),
+            UpdatedAt: new Date().toISOString()
         });
 
         return res.status(201).json({
             success: true,
-            data: { roomId: roomNumber, hotelId },
+            data: { roomId: RoomNumber, hotelId },
             message: 'Room created successfully'
         });
     } catch (error) {
@@ -124,7 +123,7 @@ const createRoom = async (req, res) => {
             error: error.message,
             stack: error.stack,
             hotelId: req.params.hotelId,
-            roomNumber: req.body.roomNumber
+            roomNumber: req.body.RoomNumber
         });
         const errorMessage = error.code === 'PERMISSION_DENIED' ? 'Permission denied' : 'Internal Server Error';
         return res.status(500).json({ 
