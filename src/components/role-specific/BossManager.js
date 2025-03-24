@@ -19,6 +19,10 @@ const BossManagerDashboard = ({ statistics }) => {
   // };
   
   // Navigate to properties page
+  const handleViewCalendar = () => {
+    navigate('/calendar');
+  };
+
   const handleViewProperties = () => {
     navigate('/properties');
   };
@@ -49,11 +53,11 @@ const BossManagerDashboard = ({ statistics }) => {
         
         <Button 
           variant="outline" 
-          onClick={handleViewProperties}
+          onClick={handleViewCalendar}
           className="flex items-center justify-center"
         >
           <span className="mr-2">🏠</span>
-          View Properties
+          View Calendar
         </Button>
       </div>
       
@@ -85,11 +89,6 @@ const BossManagerDashboard = ({ statistics }) => {
           <div>
             <h3 className="text-sm font-medium text-neutral-600">Total Properties</h3>
             <p className="text-xl font-semibold">{statistics.totalProperties}</p>
-          </div>
-          
-          <div>
-            <h3 className="text-sm font-medium text-neutral-600">Active Properties</h3>
-            <p className="text-xl font-semibold text-success-color">{statistics.activeProperties}</p>
           </div>
           
           <div>
