@@ -11,7 +11,6 @@ const Property = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
-  // Fetch properties when component mounts
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -36,7 +35,6 @@ const Property = () => {
     loadData();
   }, []);
 
-  // Handle property deletion
   const handleDelete = async (hotelId) => {
     if (window.confirm('Are you sure you want to delete this property?')) {
       try {
@@ -59,7 +57,6 @@ const Property = () => {
     }
   };
 
-  // Handle property update
   const handleUpdate = async (updatedProperty) => {
     try {
       const response = await fetch(`http://localhost:5000/hotels/${updatedProperty.hotelId}`, {
@@ -93,7 +90,6 @@ const Property = () => {
     }
   };
 
-  // Open/close modal functions
   const openModal = (property) => {
     setSelectedProperty(property);
     setIsModalOpen(true);
@@ -103,7 +99,10 @@ const Property = () => {
     setSelectedProperty(null);
   };
 
-  // Filter properties by Name or Location with safeguards
+  const handleViewRooms = (hotelId) => {
+    navigate(`/properties/${hotelId}/rooms`);
+  };
+
   const filteredProperties = properties.filter((property) => {
     const name = property.Name || '';
     const location = property.Location || '';
@@ -114,7 +113,6 @@ const Property = () => {
     );
   });
 
-  // Styles
   const styles = {
     container: {
       width: '100%',
@@ -132,6 +130,12 @@ const Property = () => {
       borderRadius: '0.375rem',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
       cursor: 'pointer',
+      display: 'flex', // Flex layout for card content and button
+      justifyContent: 'space-between', // Space between content and button
+      alignItems: 'center', // Vertically center content
+    },
+    cardContent: {
+      flex: 1, // Allow content to take available space
     },
     errorMessage: { color: '#dc2626', marginTop: '1rem', textAlign: 'center' },
     loadingText: { marginTop: '1rem', textAlign: 'center', color: '#6b7280' },
@@ -157,7 +161,7 @@ const Property = () => {
       boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
       maxHeight: '60vh',
       overflowY: 'auto',
-      position: 'relative', // Ensure the close button positions relative to this
+      position: 'relative',
     },
     closeButton: {
       position: 'absolute',
@@ -166,9 +170,9 @@ const Property = () => {
       fontSize: '1.5rem',
       cursor: 'pointer',
       color: '#dc2626',
-      background: 'none', // Remove any background to match the screenshot
-      border: 'none', // Remove border for a cleaner look
-      padding: 0, // Remove padding to fit snugly
+      background: 'none',
+      border: 'none',
+      padding: 0,
     },
     input: {
       width: '100%',
@@ -186,6 +190,7 @@ const Property = () => {
     },
     saveButton: { backgroundColor: '#3b82f6', color: '#fff', padding: '0.5rem 1.5rem' },
     deleteButton: { backgroundColor: '#dc2626', color: '#fff', padding: '0.5rem 1rem' },
+    viewRoomsButton: { backgroundColor: '#10b981', color: '#fff', padding: '0.5rem 1rem', border: 'none', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.875rem' },
   };
 
   return (
@@ -193,7 +198,6 @@ const Property = () => {
       <div>
         <h2 className="text-xl font-bold text-neutral-800 mb-4">Property List</h2>
 
-        {/* Search Bar */}
         <input
           type="text"
           name="search"
@@ -204,43 +208,48 @@ const Property = () => {
           aria-label="Search Properties"
         />
 
-        {/* Loading State */}
         {loading && <p style={styles.loadingText}>Loading properties...</p>}
-
-        {/* Error Message */}
         {error && <p style={styles.errorMessage}>{error}</p>}
-
-        {/* Success Message */}
         {successMessage && (
           <p style={{ color: 'green', textAlign: 'center', marginTop: '1rem' }}>
             {successMessage}
           </p>
         )}
-
-        {/* No Properties or Search Results */}
         {!loading && !error && filteredProperties.length === 0 && (
           <p style={styles.noProperties}>
             {searchQuery ? 'No properties match your search.' : 'No properties found.'}
           </p>
         )}
 
-        {/* Property List */}
         {!loading && !error && filteredProperties.length > 0 && (
           <div>
             {filteredProperties.map((property) => (
               <div
                 key={property.hotelId}
                 style={styles.card}
-                onClick={() => openModal(property)}
+                onClick={(e) => {
+                  // Prevent card click from triggering if button is clicked
+                  if (e.target.tagName !== 'BUTTON') openModal(property);
+                }}
               >
-                <p><strong>Name:</strong> {property.Name || 'N/A'}</p>
-                <p><strong>Location:</strong> {property.Location || 'N/A'}</p>
+                <div style={styles.cardContent}>
+                  <p><strong>Name:</strong> {property.Name || 'N/A'}</p>
+                  <p><strong>Location:</strong> {property.Location || 'N/A'}</p>
+                </div>
+                <button
+                  style={styles.viewRoomsButton}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click from opening modal
+                    handleViewRooms(property.hotelId);
+                  }}
+                >
+                  View Rooms
+                </button>
               </div>
             ))}
           </div>
         )}
 
-        {/* Modal for Update and Delete */}
         {isModalOpen && (
           <div style={styles.modalOverlay}>
             <div style={styles.modalContent}>
