@@ -224,7 +224,8 @@ const CreateBooking = () => {
 
   const styles = {
     container: {
-      width: '480px',
+      width: '100vw',
+      maxWidth: '480px',
       margin: 'auto',
       padding: '2rem',
       paddingBottom: 'calc(1rem + var(--footer-height))',
@@ -281,6 +282,18 @@ const CreateBooking = () => {
     },
     errorMessage: {
       color: '#dc2626',
+    },
+    CreateBooking: {
+      margin: '2em auto',
+      display: 'block',
+      padding: '1em 2em',
+      backgroundColor: '#FFD167',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '2em',
+      fontSize: '16px',
+      cursor: 'pointer',
+      textAlign: 'center',
     },
   };
 
@@ -492,6 +505,7 @@ const CreateBooking = () => {
 
           {/* Submit Button */}
           <Button
+          style = {styles.CreateBooking}
             type="submit"
             variant="primary"
             size="lg"

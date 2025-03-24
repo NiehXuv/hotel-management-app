@@ -84,7 +84,7 @@ const Dashboard = () => {
     const isLargeScreen = windowWidth > 480;
   
     return {
-      width: '100%',
+      width: '100vw',
       maxWidth: isLargeScreen ? '480px' : '100%',
       margin: isLargeScreen ? '0 auto' : '0',
       paddingBottom: '70px', // Space for BottomNavigation

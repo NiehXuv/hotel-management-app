@@ -36,7 +36,13 @@ const Properties = () => {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   
-  const [properties, setProperties] = useState([]);
+  const [hotelsList, setHotelsList] = useState([]);
+  const [statistics, setStatistics] = useState({
+    totalProperties: 0,
+    totalRooms: 0,
+    occupiedRooms: 0,
+    occupancyRate: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedFilters, setExpandedFilters] = useState(false);
@@ -53,7 +59,6 @@ const Properties = () => {
     ).length;
   }, [filters]);
 
-  // Moved fetchProperties outside useEffect and memoized it
   const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
@@ -72,31 +77,30 @@ const Properties = () => {
         phoneNumber: property.PhoneNumber,
         totalRooms: 0,
         occupiedRooms: 0,
+        occupancyRate: 0,
         cleanRooms: 0,
         dirtyRooms: 0,
         maintenanceRooms: 0,
-        occupancyRate: 0,
         averageRating: 0,
         priceRange: 'N/A',
         revenue: { daily: 0, monthly: 0 },
         issues: 0,
       }));
       
-      setProperties(formattedProperties);
+      setHotelsList(formattedProperties);
+      setStatistics(response.statistics);
     } catch (error) {
       console.error('Error fetching properties:', error);
       setError('Failed to load properties. Please try again later.');
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array since it doesn't depend on any external values
+  }, []);
 
-  // Fetch properties on mount
   useEffect(() => {
     fetchProperties();
   }, [fetchProperties]);
 
-  // Filter handlers
   const handleFilterChange = useCallback((filterName, value) => {
     setFilters(prevFilters => ({
       ...prevFilters,
@@ -117,7 +121,7 @@ const Properties = () => {
   }, []);
 
   const filteredProperties = useMemo(() => {
-    return properties.filter(property => {
+    return hotelsList.filter(property => {
       const matchesSearch = filters.search === '' || 
         property.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         property.address.toLowerCase().includes(filters.search.toLowerCase());
@@ -129,10 +133,14 @@ const Properties = () => {
 
       return matchesSearch && matchesStatus && matchesLocation;
     });
-  }, [properties, filters]);
+  }, [hotelsList, filters]);
 
   const handlePropertyClick = useCallback((propertyId) => {
     navigate(`/properties/${propertyId}`);
+  }, [navigate]);
+
+  const handleViewRoomsClick = useCallback((propertyId) => {
+    navigate(`/properties/${propertyId}/rooms`);
   }, [navigate]);
 
   const renderStatusBadge = useCallback((status) => {
@@ -143,36 +151,6 @@ const Properties = () => {
     };
     return <StatusBadge status={statusMap[status] || 'neutral'} />;
   }, []);
-
-  const totalStats = useMemo(() => {
-    return properties.reduce((totals, property) => {
-      return {
-        totalRooms: totals.totalRooms + property.totalRooms,
-        occupiedRooms: totals.occupiedRooms + property.occupiedRooms,
-        cleanRooms: totals.cleanRooms + property.cleanRooms,
-        dirtyRooms: totals.dirtyRooms + property.dirtyRooms,
-        maintenanceRooms: totals.maintenanceRooms + property.maintenanceRooms,
-        issues: totals.issues + property.issues,
-        revenue: {
-          daily: totals.revenue.daily + property.revenue.daily,
-          monthly: totals.revenue.monthly + property.revenue.monthly
-        }
-      };
-    }, {
-      totalRooms: 0,
-      occupiedRooms: 0,
-      cleanRooms: 0,
-      dirtyRooms: 0,
-      maintenanceRooms: 0,
-      issues: 0,
-      revenue: { daily: 0, monthly: 0 }
-    });
-  }, [properties]);
-
-  const overallOccupancy = useMemo(() => {
-    if (totalStats.totalRooms === 0) return 0;
-    return Math.round((totalStats.occupiedRooms / totalStats.totalRooms) * 100);
-  }, [totalStats]);
 
   const FilterChip = ({ label, filterType, value, isActive }) => (
     <button 
@@ -207,7 +185,7 @@ const Properties = () => {
       };
       
       const response = await api.createProperty(newProperty);
-      setProperties(prev => [...prev, {
+      setHotelsList(prev => [...prev, {
         id: response.data.hotelId,
         name: response.data.name,
         address: newProperty.location,
@@ -218,19 +196,20 @@ const Properties = () => {
         phoneNumber: newProperty.phoneNumber,
         totalRooms: 0,
         occupiedRooms: 0,
+        occupancyRate: 0,
         cleanRooms: 0,
         dirtyRooms: 0,
         maintenanceRooms: 0,
-        occupancyRate: 0,
         averageRating: 0,
         priceRange: 'N/A',
         revenue: { daily: 0, monthly: 0 },
         issues: 0,
       }]);
+      await fetchProperties();
     } catch (error) {
       setError('Failed to create new property');
     }
-  }, []);
+  }, [fetchProperties]);
 
   return (
     <div className="page-container pb-6">
@@ -248,19 +227,22 @@ const Properties = () => {
       </div>
 
       <Card className="mb-4 shadow-soft-sm animate-fade-in">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600">Properties</h3>
-            <p className="text-2xl font-semibold">{properties.length}</p>
+            <h3 className="text-sm font-medium text-neutral-600">Total Properties</h3>
+            <p className="text-2xl font-semibold">{statistics.totalProperties}</p>
           </div>
           <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600">Occupancy</h3>
-            <p className="text-2xl font-semibold">{overallOccupancy}%</p>
+            <h3 className="text-sm font-medium text-neutral-600">Total Rooms</h3>
+            <p className="text-2xl font-semibold">{statistics.totalRooms}</p>
           </div>
           <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600">Revenue</h3>
-            <p className="text-2xl font-semibold">${totalStats.revenue.daily.toLocaleString()}</p>
-            <p className="text-xs text-neutral-500">Daily</p>
+            <h3 className="text-sm font-medium text-neutral-600">Occupied Rooms</h3>
+            <p className="text-2xl font-semibold">{statistics.occupiedRooms}</p>
+          </div>
+          <div className="text-center">
+            <h3 className="text-sm font-medium text-neutral-600">Occupancy Rate</h3>
+            <p className="text-2xl font-semibold">{statistics.occupancyRate}%</p>
           </div>
         </div>
       </Card>
@@ -363,7 +345,7 @@ const Properties = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={fetchProperties} // Now properly defined
+              onClick={fetchProperties}
             >
               Try Again
             </Button>
@@ -385,6 +367,18 @@ const Properties = () => {
               <p className="text-sm text-neutral-500">{property.description}</p>
               <p className="text-sm text-neutral-500">Email: {property.email}</p>
               <p className="text-sm text-neutral-500">Phone: {property.phoneNumber}</p>
+              <div className="mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevents card click from triggering
+                    handleViewRoomsClick(property.id);
+                  }}
+                >
+                  View Rooms
+                </Button>
+              </div>
             </Card>
           ))
         ) : (

@@ -77,7 +77,7 @@ const Login = () => {
         throw new Error('Invalid password');
       }
   
-      const userRole = foundUser.role || 'boss';
+      const userRole = foundUser.role || 'receptionist';
       const userRoleLower = userRole.toLowerCase();
   
       const userWithPermissions = {
@@ -88,7 +88,7 @@ const Login = () => {
         role: userRole,
         avatar: getAvatarForRole(userRoleLower),
         permissions: {
-          ...rolePermissions[userRoleLower] || rolePermissions['boss']
+          ...rolePermissions[userRoleLower] || rolePermissions['receptionist']
         }
       };
   

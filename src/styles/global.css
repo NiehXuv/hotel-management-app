@@ -2666,7 +2666,7 @@ a.link-underline:hover::after {
 
 /* Mobile app specific styling with enhanced aesthetics */
 .mobile-app {
-    max-width: 480px;
+    max-width: 100%;
     margin: 0 auto;
     height: 100%;
     position: relative;
@@ -2677,7 +2677,9 @@ a.link-underline:hover::after {
 }
 
 .app-content {
-    padding-top: var(--header-height);
+    width: 100%;
+    padding-top: 1em;
+    margin: auto;
     padding-bottom: calc(var(--footer-height) + env(safe-area-inset-bottom, 0px));
     overflow-y: auto;
     height: 100%;
@@ -2715,7 +2717,7 @@ a.link-underline:hover::after {
     background-color: var(--surface-primary);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-soft-sm);
-    padding: var(--card-padding);
+    padding: 1em;
     margin-bottom: var(--spacing-md);
     border: var(--card-border-width) solid var(--card-border-color);
     position: relative;
