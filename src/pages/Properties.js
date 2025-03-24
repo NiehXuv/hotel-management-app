@@ -9,7 +9,7 @@ import { StatusBadge } from '../components/common/Badge';
 // API service with your specific routes
 const api = {
   getProperties: async () => {
-    const response = await fetch('/hotels', {
+    const response = await fetch('http://localhost:5000/hotels', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

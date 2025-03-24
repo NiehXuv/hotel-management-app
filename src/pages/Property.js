@@ -114,6 +114,9 @@ const Property = () => {
   });
 
   const styles = {
+    search: {
+      marginBottom: '1rem',
+    },
     container: {
       width: '100%',
       margin: 'auto',
@@ -199,6 +202,7 @@ const Property = () => {
         <h2 className="text-xl font-bold text-neutral-800 mb-4">Property List</h2>
 
         <input
+        style={styles.search}
           type="text"
           name="search"
           placeholder="Search by Hotel Name or Location"

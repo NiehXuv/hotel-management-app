@@ -367,10 +367,10 @@ const CreateBooking = () => {
                 {bookingData.hotelId ? "Select a Room" : "Select a Property First"}
               </option>
               {roomIds
-                .sort((a, b) => a.roomNumber - b.roomNumber)
+                .sort((a, b) => a.RoomNumber - b.RoomNumber)
                 .map((room) => (
                   <option key={room.id} value={room.id}>
-                    {room.roomName} (Room {room.roomNumber})
+                    {room.RoomName} (Room {room.RoomNumber})
                   </option>
                 ))}
             </select>
