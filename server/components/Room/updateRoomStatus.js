@@ -1,4 +1,3 @@
-// roomStatusController.js
 const { database } = require("../config/firebaseconfig");
 const { ref, get, update } = require("firebase/database");
 
@@ -7,7 +6,7 @@ const updateRoomStatus = async (req, res) => {
         const { hotelId, roomNumber } = req.params;
         const { status } = req.body;
 
-        const validStatuses = ['available', 'booked', 'in-cleaning'];
+        const validStatuses = ['Available', 'Occupied']; // Updated to match frontend options
         
         if (!hotelId || !roomNumber) {
             return res.status(400).json({
@@ -19,7 +18,7 @@ const updateRoomStatus = async (req, res) => {
         if (!status || !validStatuses.includes(status)) {
             return res.status(400).json({
                 success: false,
-                error: 'Status must be one of: available, booked, in-cleaning'
+                error: 'Status must be either "Available" or "Occupied"' // Updated error message
             });
         }
 
@@ -34,13 +33,13 @@ const updateRoomStatus = async (req, res) => {
         }
 
         await update(roomRef, {
-            status: status,
-            updatedAt: new Date().toISOString()
+            Status: status, // Capitalized to match database convention
+            UpdatedAt: new Date().toISOString() // Capitalized to match other fields
         });
 
         return res.status(200).json({
             success: true,
-            data: { hotelId, roomNumber, status },
+            data: { hotelId, roomNumber, Status: status }, // Capitalized in response
             message: 'Room status updated successfully'
         });
 

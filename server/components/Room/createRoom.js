@@ -108,7 +108,7 @@ const createRoom = async (req, res) => {
             PriceByDay: Number(PriceByDay),
             PriceByNight: Number(PriceByNight),
             PriceBySection: Number(PriceBySection),
-            Status: 'available',
+            Status: 'Available',
             CreatedAt: new Date().toISOString(),
             UpdatedAt: new Date().toISOString()
         });

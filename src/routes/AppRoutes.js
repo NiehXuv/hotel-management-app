@@ -25,7 +25,8 @@ import Customer from '../pages/Customer';
 import CreateProperty from '../pages/CreateProperty';
 import Booking from '../pages/Booking';
 import Menu from '../pages/Menu';
-import Property from '../pages/Property'; // Already imported, no change needed here
+import Property from '../pages/Property';
+import Room from '../pages/Room'; 
 
 /**
  * Protected Route Component
@@ -241,6 +242,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Property />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/properties/:hotelId/rooms" 
+        element={
+          <ProtectedRoute>
+            <Room  />
           </ProtectedRoute>
         } 
       />
