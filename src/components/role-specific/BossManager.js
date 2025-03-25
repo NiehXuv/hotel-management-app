@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../common/Card';
 import Button from '../common/Button';
-
+import {FaCalendarWeek} from 'react-icons/fa';
 /**
  * Boss and Manager Dashboard Component
  * Shows management-focused widgets and statistics
@@ -56,7 +56,7 @@ const BossManagerDashboard = ({ statistics }) => {
           onClick={handleViewCalendar}
           className="flex items-center justify-center"
         >
-          <span className="mr-2">🏠</span>
+          <span className="mr-2"><FaCalendarWeek /></span>
           View Calendar
         </Button>
       </div>

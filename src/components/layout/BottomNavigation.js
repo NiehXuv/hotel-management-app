@@ -1,39 +1,47 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import {
+  MdDashboard,
+  MdCalendarToday,
+  MdAddBox,
+  MdNotifications,
+  MdMenu,
+  MdAssessment,
+  MdSettings,
+} from 'react-icons/md';
 
 const BottomNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { getNavigationItems } = useAuth();
-  
+
   const navigationItems = getNavigationItems();
-  
+
   const navConfig = {
-    dashboard: { label: 'Dashboard', icon: '📊', path: '/dashboard' },
-    tasks: { label: 'Calendar', icon: '📅', path: '/calendar' },
-    properties: { label: 'Add', icon: '🏠', path: '/add' },
-    notifications: { label: 'Alerts', icon: '🔔', path: '/notifications' },
-    users: { label: 'Menu', icon: '☰', path: '/menu' },
-    reports: { label: 'Reports', icon: '📈', path: '/reports' },
-    settings: { label: 'Settings', icon: '⚙️', path: '/settings' },
+    dashboard: { label: 'Dashboard', icon: <MdDashboard />, path: '/dashboard' },
+    tasks: { label: 'Calendar', icon: <MdCalendarToday />, path: '/calendar' },
+    properties: { label: 'Add', icon: <MdAddBox />, path: '/add' },
+    notifications: { label: 'Alerts', icon: <MdNotifications />, path: '/notifications' },
+    users: { label: 'Menu', icon: <MdMenu />, path: '/menu' },
+    reports: { label: 'Reports', icon: <MdAssessment />, path: '/reports' },
+    settings: { label: 'Settings', icon: <MdSettings />, path: '/settings' },
   };
-  
-  const sideItems = navigationItems.filter(item => item !== 'properties').slice(0, 4);
+
+  const sideItems = navigationItems.filter((item) => item !== 'properties').slice(0, 4);
   const leftItems = sideItems.slice(0, 2); // Dashboard, Calendar
   const rightItems = sideItems.slice(2, 4); // Alerts, Users
-  
+
   const isActive = (path) => location.pathname === path;
   const handleNavigation = (path) => navigate(path);
 
   const getStyles = () => {
     const windowWidth = window.innerWidth;
-    const isExtraSmallScreen = windowWidth < 320; // Very small devices
-    const isSmallScreen = windowWidth >= 320 && windowWidth < 360; // Small devices
-    const isMediumScreen = windowWidth >= 360 && windowWidth <= 480; // Typical mobile
-    const isLargeScreen = windowWidth > 480; // Larger than typical mobile
+    const isExtraSmallScreen = windowWidth < 320;
+    const isSmallScreen = windowWidth >= 320 && windowWidth < 360;
+    const isMediumScreen = windowWidth >= 360 && windowWidth <= 480;
+    const isLargeScreen = windowWidth > 480;
 
-    // Dynamic sizing based on viewport width
     const sideButtonWidth = isExtraSmallScreen
       ? '40px'
       : isSmallScreen
@@ -42,21 +50,26 @@ const BottomNavigation = () => {
       ? '50px'
       : '60px';
 
-    const centerButtonWidth = isExtraSmallScreen
-      ? '3.5rem' // 56px
+    const centerButtonSize = isExtraSmallScreen
+      ? '3.5rem'
       : isSmallScreen
-      ? '4rem' // 64px
+      ? '4rem'
       : isMediumScreen
-      ? '4.5rem' // 72px
-      : '5.5rem'; // 88px
+      ? '4.5rem'
+      : '5.5rem';
 
-    const centerIconSize = isExtraSmallScreen
-      ? '3.5rem' // 56px
+    const iconSize = isExtraSmallScreen
+      ? '1.25rem'
       : isSmallScreen
-      ? '4rem' // 64px
-      : isMediumScreen
-      ? '4.5rem' // 72px
-      : '5rem'; // 80px
+      ? '1.5rem'
+      : '1.75rem';
+
+    // Increased centerIconSize for a bigger icon
+    const centerIconSize = isExtraSmallScreen
+      ? '3rem'    // Was 2.5rem, increased by 0.5rem
+      : isSmallScreen
+      ? '3.5rem'  // Was 3rem, increased by 0.5rem
+      : '4rem';   // Was 3.5rem, increased by 0.5rem
 
     const navHeight = isExtraSmallScreen
       ? '50px'
@@ -66,11 +79,7 @@ const BottomNavigation = () => {
       ? '60px'
       : 'var(--footer-height, 70px)';
 
-    const padding = isExtraSmallScreen
-      ? '0 5px'
-      : isSmallScreen
-      ? '0 8px'
-      : '0 10px';
+    const padding = isExtraSmallScreen ? '0 5px' : isSmallScreen ? '0 8px' : '0 10px';
 
     return {
       nav: {
@@ -88,11 +97,11 @@ const BottomNavigation = () => {
       },
       container: {
         display: 'flex',
-        justifyContent: 'space-between', // Equal spacing between all items
+        justifyContent: 'space-between',
         alignItems: 'center',
         height: '100%',
         width: '100%',
-        padding: padding, // Dynamic padding
+        padding: padding,
         position: 'relative',
         boxSizing: 'border-box',
       },
@@ -113,46 +122,31 @@ const BottomNavigation = () => {
         color: '#3b82f6',
       },
       navItemIcon: {
-        fontSize: isExtraSmallScreen
-          ? '0.875rem'
-          : isSmallScreen
-          ? '1rem'
-          : '1.25rem',
+        fontSize: iconSize,
         marginBottom: isExtraSmallScreen ? '0.1rem' : '0.125rem',
       },
       navItemLabel: {
-        fontSize: isExtraSmallScreen
-          ? '0.6rem'
-          : isSmallScreen
-          ? '0.65rem'
-          : '0.75rem',
+        fontSize: isExtraSmallScreen ? '0.6rem' : isSmallScreen ? '0.65rem' : '0.75rem',
         marginTop: '0.125rem',
         fontWeight: 500,
         display: 'block',
       },
       centerButton: {
-        width: centerButtonWidth,
-        height: centerButtonWidth, // Keep it circular
+        width: centerButtonSize,
+        height: centerButtonSize,
         backgroundColor: '#000000',
-        borderRadius: '50%',
+        borderRadius: '12px', // Rounded square
         display: 'flex',
-        alignItems: 'center', // Center vertically
-        justifyContent: 'center', // Center horizontally
+        alignItems: 'center',
+        justifyContent: 'center',
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
         border: 'none',
         cursor: 'pointer',
       },
       centerIcon: {
-        fontSize: centerIconSize,
+        fontSize: centerIconSize, // Applies the larger size
         color: '#fff',
-        marginTop: isExtraSmallScreen
-          ? '-0.15rem'
-          : isSmallScreen
-          ? '-0.2rem'
-          : isMediumScreen
-          ? '-0.25rem'
-          : '-0.5rem', // Slight upward shift
-      }
+      },
     };
   };
 
@@ -172,13 +166,13 @@ const BottomNavigation = () => {
           const config = navConfig[item];
           if (!config) return null;
           const active = isActive(config.path);
-          
+
           return (
             <button
               key={item}
               style={{
                 ...styles.navItem,
-                ...(active ? styles.navItemActive : {})
+                ...(active ? styles.navItemActive : {}),
               }}
               onClick={() => handleNavigation(config.path)}
             >
@@ -188,13 +182,13 @@ const BottomNavigation = () => {
           );
         })}
 
-        {/* Center Circle Button */}
+        {/* Center Rounded Square Button with Bigger Icon */}
         <button
           style={styles.centerButton}
           onClick={() => handleNavigation(navConfig.properties.path)}
           aria-label="Add"
         >
-          <span style={styles.centerIcon}>+</span>
+          <span style={styles.centerIcon}>{navConfig.properties.icon}</span>
         </button>
 
         {/* Right Side Items */}
@@ -202,13 +196,13 @@ const BottomNavigation = () => {
           const config = navConfig[item];
           if (!config) return null;
           const active = isActive(config.path);
-          
+
           return (
             <button
               key={item}
               style={{
                 ...styles.navItem,
-                ...(active ? styles.navItemActive : {})
+                ...(active ? styles.navItemActive : {}),
               }}
               onClick={() => handleNavigation(config.path)}
             >
