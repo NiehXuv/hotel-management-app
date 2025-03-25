@@ -11,23 +11,17 @@ const api = {
   getProperties: async () => {
     const response = await fetch('http://localhost:5000/hotels', {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
     if (!response.ok) throw new Error('Failed to fetch properties');
     return response.json();
   },
-  
-  createProperty: async (propertyData) => {
-    const response = await fetch('/api/hotel/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(propertyData),
+  getRoomsForHotel: async (hotelId) => {
+    const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
     });
-    if (!response.ok) throw new Error('Failed to create property');
+    if (!response.ok) throw new Error(`Failed to fetch rooms for hotel ${hotelId}`);
     return response.json();
   },
 };
@@ -40,55 +34,63 @@ const Properties = () => {
   const [statistics, setStatistics] = useState({
     totalProperties: 0,
     totalRooms: 0,
-    occupiedRooms: 0,
     occupancyRate: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedFilters, setExpandedFilters] = useState(false);
   
-  const [filters, setFilters] = useState({
-    search: '',
-    status: 'all',
-    location: 'all',
-  });
-
-  const activeFilterCount = useMemo(() => {
-    return Object.entries(filters).filter(([key, value]) => 
-      key !== 'search' && value !== 'all'
-    ).length;
-  }, [filters]);
+  const [filters, setFilters] = useState({ search: '' });
 
   const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await api.getProperties();
-      
-      const formattedProperties = response.data.map(property => ({
-        id: property.hotelId,
-        name: property.Name,
-        address: property.Location,
-        type: 'hotel',
-        status: 'active',
-        description: property.Description,
-        email: property.Email,
-        phoneNumber: property.PhoneNumber,
-        totalRooms: 0,
-        occupiedRooms: 0,
-        occupancyRate: 0,
-        cleanRooms: 0,
-        dirtyRooms: 0,
-        maintenanceRooms: 0,
-        averageRating: 0,
-        priceRange: 'N/A',
-        revenue: { daily: 0, monthly: 0 },
-        issues: 0,
-      }));
-      
+      const propertiesResponse = await api.getProperties();
+      const hotels = propertiesResponse.data;
+
+      // Fetch room data for each hotel
+      const formattedProperties = await Promise.all(
+        hotels.map(async (property) => {
+          const roomsResponse = await api.getRoomsForHotel(property.hotelId);
+          const roomData = roomsResponse.data || [];
+          
+          return {
+            id: property.hotelId,
+            name: property.Name,
+            address: property.Location,
+            type: 'hotel',
+            status: 'active',
+            description: property.Description,
+            email: property.Email,
+            phoneNumber: property.PhoneNumber,
+            totalRooms: roomsResponse.roomCount || 0,
+            occupiedCount: roomsResponse.occupiedCount || 0,
+            occupancyRate: roomsResponse.roomCount > 0 
+              ? Math.round((roomsResponse.occupiedCount / roomsResponse.roomCount) * 100) 
+              : 0,
+            cleanRooms: 0, // You could extend your backend to include this
+            dirtyRooms: 0, // Same here
+            maintenanceRooms: 0, // Same here
+            averageRating: 0,
+            priceRange: 'N/A',
+            revenue: { daily: 0, monthly: 0 },
+            issues: 0,
+          };
+        })
+      );
+
       setHotelsList(formattedProperties);
-      setStatistics(response.statistics);
+      setStatistics({
+        totalProperties: propertiesResponse.statistics.totalProperties,
+        totalRooms: formattedProperties.reduce((sum, hotel) => sum + hotel.totalRooms, 0),
+        occupancyRate: formattedProperties.length > 0 
+          ? Math.round(
+              formattedProperties.reduce((sum, hotel) => sum + hotel.occupiedCount, 0) /
+              formattedProperties.reduce((sum, hotel) => sum + hotel.totalRooms, 0) * 100
+            ) 
+          : 0,
+      });
     } catch (error) {
       console.error('Error fetching properties:', error);
       setError('Failed to load properties. Please try again later.');
@@ -102,22 +104,7 @@ const Properties = () => {
   }, [fetchProperties]);
 
   const handleFilterChange = useCallback((filterName, value) => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      [filterName]: value
-    }));
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setFilters({
-      search: '',
-      status: 'all',
-      location: 'all',
-    });
-  }, []);
-
-  const toggleFilters = useCallback(() => {
-    setExpandedFilters(prev => !prev);
+    setFilters(prevFilters => ({ ...prevFilters, [filterName]: value }));
   }, []);
 
   const filteredProperties = useMemo(() => {
@@ -125,13 +112,7 @@ const Properties = () => {
       const matchesSearch = filters.search === '' || 
         property.name.toLowerCase().includes(filters.search.toLowerCase()) ||
         property.address.toLowerCase().includes(filters.search.toLowerCase());
-      
-      const matchesStatus = filters.status === 'all' || property.status === filters.status;
-      
-      const matchesLocation = filters.location === 'all' || 
-        property.address.toLowerCase().includes(filters.location.toLowerCase());
-
-      return matchesSearch && matchesStatus && matchesLocation;
+      return matchesSearch;
     });
   }, [hotelsList, filters]);
 
@@ -139,115 +120,39 @@ const Properties = () => {
     navigate(`/properties/${propertyId}`);
   }, [navigate]);
 
-  const handleViewRoomsClick = useCallback((propertyId) => {
-    navigate(`/properties/${propertyId}/rooms`);
-  }, [navigate]);
-
   const renderStatusBadge = useCallback((status) => {
-    const statusMap = {
-      active: 'active',
-      maintenance: 'pending',
-      inactive: 'inactive'
-    };
+    const statusMap = { active: 'active', maintenance: 'pending', inactive: 'inactive' };
     return <StatusBadge status={statusMap[status] || 'neutral'} />;
   }, []);
 
-  const FilterChip = ({ label, filterType, value, isActive }) => (
-    <button 
-      className={`px-sm py-2xs rounded-full text-sm mr-xs mb-xs transition-all ${
-        isActive 
-          ? 'bg-primary text-white shadow-sm' 
-          : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
-      }`}
-      onClick={() => handleFilterChange(filterType, isActive ? 'all' : value)}
-    >
-      {label}
-    </button>
-  );
-
-  const FilterCountBadge = () => {
-    if (activeFilterCount === 0) return null;
-    return (
-      <span className="ml-xs bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-        {activeFilterCount}
-      </span>
-    );
-  };
-
-  const handleAddProperty = useCallback(async () => {
-    try {
-      const newProperty = {
-        name: "New Hotel",
-        description: "New hotel description",
-        location: "New Location",
-        email: "newhotel@example.com",
-        phoneNumber: "123-456-7890"
-      };
-      
-      const response = await api.createProperty(newProperty);
-      setHotelsList(prev => [...prev, {
-        id: response.data.hotelId,
-        name: response.data.name,
-        address: newProperty.location,
-        type: 'hotel',
-        status: 'active',
-        description: newProperty.description,
-        email: newProperty.email,
-        phoneNumber: newProperty.phoneNumber,
-        totalRooms: 0,
-        occupiedRooms: 0,
-        occupancyRate: 0,
-        cleanRooms: 0,
-        dirtyRooms: 0,
-        maintenanceRooms: 0,
-        averageRating: 0,
-        priceRange: 'N/A',
-        revenue: { daily: 0, monthly: 0 },
-        issues: 0,
-      }]);
-      await fetchProperties();
-    } catch (error) {
-      setError('Failed to create new property');
-    }
-  }, [fetchProperties]);
+  const handleAddProperty = useCallback(() => {
+    navigate('/hotel/create');
+  }, [navigate]);
 
   return (
-    <div className="page-container pb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold">Properties</h1>
-        {hasPermission('canManageProperties') && (
-          <Button 
-            variant="primary" 
-            size="sm"
-            onClick={handleAddProperty}
-          >
-            Add Property
-          </Button>
-        )}
+    <div style={styles.container}>
+      <div className="flex justify-center items-center mb-4">
+        <h1 className="text-xl font-bold">PROPERTIES</h1>
       </div>
 
-      <Card className="mb-4 shadow-soft-sm animate-fade-in">
-        <div className="grid grid-cols-4 gap-4">
+      <Card style={styles.staticBoard}>
+        <div className="grid grid-cols-3 gap-4">
           <div className="text-center">
             <h3 className="text-sm font-medium text-neutral-600">Total Properties</h3>
-            <p className="text-2xl font-semibold">{statistics.totalProperties}</p>
+            <p className="text-3xl font-bold text-primary">{statistics.totalProperties}</p>
           </div>
           <div className="text-center">
             <h3 className="text-sm font-medium text-neutral-600">Total Rooms</h3>
-            <p className="text-2xl font-semibold">{statistics.totalRooms}</p>
-          </div>
-          <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600">Occupied Rooms</h3>
-            <p className="text-2xl font-semibold">{statistics.occupiedRooms}</p>
+            <p className="text-3xl font-bold text-primary">{statistics.totalRooms}</p>
           </div>
           <div className="text-center">
             <h3 className="text-sm font-medium text-neutral-600">Occupancy Rate</h3>
-            <p className="text-2xl font-semibold">{statistics.occupancyRate}%</p>
+            <p className="text-3xl font-bold text-primary">{statistics.occupancyRate}%</p>
           </div>
         </div>
       </Card>
 
-      <div className="mb-4 animate-fade-in" style={{ animationDelay: '50ms' }}>
+      <div>
         <div className="flex mb-3">
           <div className="flex-1 relative">
             <Input
@@ -255,7 +160,7 @@ const Properties = () => {
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               startIcon={<span className="text-neutral-400">🔍</span>}
-              className="pr-10 shadow-soft-sm" 
+              className="pr-10 shadow-soft-sm"
             />
             {filters.search && (
               <button 
@@ -266,68 +171,7 @@ const Properties = () => {
               </button>
             )}
           </div>
-          <button 
-            className="ml-2 flex items-center bg-white rounded-md border border-neutral-300 px-md py-sm text-sm font-medium hover:bg-neutral-50 shadow-soft-sm transition-all"
-            onClick={toggleFilters}
-          >
-            <span className="mr-2xs">Filters</span>
-            <FilterCountBadge />
-          </button>
         </div>
-
-        {expandedFilters && (
-          <Card className="mb-3 animate-slide-up shadow-soft-md border-t-4 border-t-primary-lighter">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <h4 className="text-sm font-semibold mb-2 text-neutral-700">Status</h4>
-                <div className="flex flex-wrap">
-                  <FilterChip 
-                    label="Active" 
-                    filterType="status" 
-                    value="active" 
-                    isActive={filters.status === 'active'} 
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold mb-2 text-neutral-700">Location</h4>
-                <div className="flex flex-wrap">
-                  <FilterChip 
-                    label="Seaside" 
-                    filterType="location" 
-                    value="seaside" 
-                    isActive={filters.location === 'seaside'} 
-                  />
-                  <FilterChip 
-                    label="Highland" 
-                    filterType="location" 
-                    value="highland" 
-                    isActive={filters.location === 'highland'} 
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-4 pt-3 border-t border-neutral-200">
-              <Button 
-                variant="outline"
-                size="sm"
-                className="mr-2"
-                onClick={handleClearFilters}
-              >
-                Clear All
-              </Button>
-              <Button 
-                variant="primary"
-                size="sm"
-                onClick={toggleFilters}
-              >
-                Apply Filters
-              </Button>
-            </div>
-          </Card>
-        )}
       </div>
 
       <div className="stagger-children">
@@ -342,17 +186,14 @@ const Properties = () => {
           <div className="text-center py-8 bg-white rounded-lg shadow-soft-sm">
             <div className="text-4xl mb-2">⚠️</div>
             <p className="text-neutral-600 mb-2 font-medium">{error}</p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={fetchProperties}
-            >
+            <Button variant="outline" size="sm" onClick={fetchProperties}>
               Try Again
             </Button>
           </div>
         ) : filteredProperties.length > 0 ? (
           filteredProperties.map((property) => (
-            <Card 
+            <Card
+              style = {styles.hotelCard} 
               key={property.id}
               className="mb-3 card-interactive"
               onClick={() => handlePropertyClick(property.id)}
@@ -361,43 +202,65 @@ const Properties = () => {
                 <div>
                   <h2 className="font-medium text-lg">{property.name}</h2>
                   <p className="text-sm text-neutral-600">{property.address}</p>
+                  <p className="text-sm text-neutral-500">
+                    Rooms: {property.totalRooms} | Occupied: {property.occupiedCount} 
+                    ({property.occupancyRate}%)
+                  </p>
                 </div>
                 {renderStatusBadge(property.status)}
-              </div>
-              <p className="text-sm text-neutral-500">{property.description}</p>
-              <p className="text-sm text-neutral-500">Email: {property.email}</p>
-              <p className="text-sm text-neutral-500">Phone: {property.phoneNumber}</p>
-              <div className="mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevents card click from triggering
-                    handleViewRoomsClick(property.id);
-                  }}
-                >
-                  View Rooms
-                </Button>
               </div>
             </Card>
           ))
         ) : (
           <div className="text-center py-8 bg-white rounded-lg shadow-soft-sm">
             <div className="text-4xl mb-2">🏨</div>
-            <p className="text-neutral-600 mb-2 font-medium">No properties match your filters</p>
+            <p className="text-neutral-600 mb-2 font-medium">No properties match your search</p>
             <p className="text-neutral-500 mb-4 text-sm">Try adjusting your search criteria</p>
             <Button 
               variant="outline" 
               size="sm"
-              onClick={handleClearFilters}
+              onClick={() => handleFilterChange('search', '')}
             >
-              Clear Filters
+              Clear Search
             </Button>
           </div>
         )}
       </div>
+      {hasPermission('canManageProperties') && (
+        <Button 
+          variant="primary" 
+          size="sm"
+          onClick={handleAddProperty}
+          style={styles.CreateButton}
+        >
+          Add Property
+        </Button>
+      )}
     </div>
   );
+};
+
+const styles = {
+  staticBoard: { width: '100%', margin: '1em auto', height: '7em' },
+  container: { width: '100vw', maxWidth: '480px', padding: '1em', marginBottom:'3em' },
+  CreateButton: {
+    margin: '2em auto',
+    display: 'block',
+    padding: '1em 2em',
+    backgroundColor: '#FFD167',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '2em',
+    fontSize: '16px',
+    cursor: 'pointer',
+    textAlign: 'center',
+  },
+  hotelCard: {
+    borderRadius: '1em',
+    height: '7em',
+    lineHeight: '1', 
+    padding: '1em',
+  }
 };
 
 export default Properties;

@@ -3,16 +3,15 @@ const { ref, get } = require('firebase/database');
 
 const listRooms = async (req, res) => {
     try {
-        const { hotelId } = req.params; // Required hotel ID
+        const { hotelId } = req.params;
         const { 
             name, 
             status, 
             pricebyDay, 
             pricebyNight, 
             pricebySection 
-        } = req.query; // Optional query parameters for filtering
+        } = req.query;
 
-        // Validate hotelId
         if (!hotelId) {
             return res.status(400).json({
                 success: false,
@@ -20,7 +19,6 @@ const listRooms = async (req, res) => {
             });
         }
 
-        // Reference to the rooms under the specified hotel
         const roomsRef = ref(database, `Hotel/${hotelId}/Room`);
         const snapshot = await get(roomsRef);
 
@@ -28,46 +26,40 @@ const listRooms = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 data: [],
+                roomCount: 0,
+                occupiedCount: 0,
                 message: 'No rooms found for this hotel'
             });
         }
 
-        // Get all rooms
         const roomsData = snapshot.val();
         let roomsList = Object.entries(roomsData).map(([roomNumber, data]) => ({
-            id: roomNumber, // Add id to match frontend expectation
+            id: roomNumber,
             roomNumber,
             ...data
         }));
 
-        // Apply filters if provided
         if (name || status || pricebyDay || pricebyNight || pricebySection) {
             roomsList = roomsList.filter(room => {
                 let matches = true;
-
-                if (name && room.name && room.name.toLowerCase().indexOf(name.toLowerCase()) === -1) {
-                    matches = false;
-                }
-                if (status && room.status !== status) {
-                    matches = false;
-                }
-                if (pricebyDay && room.pricebyDay !== Number(pricebyDay)) {
-                    matches = false;
-                }
-                if (pricebyNight && room.pricebyNight !== Number(pricebyNight)) {
-                    matches = false;
-                }
-                if (pricebySection && room.pricebySection !== Number(pricebySection)) {
-                    matches = false;
-                }
-
+                if (name && room.name && room.name.toLowerCase().indexOf(name.toLowerCase()) === -1) matches = false;
+                if (status && room.status !== status) matches = false;
+                if (pricebyDay && room.pricebyDay !== Number(pricebyDay)) matches = false;
+                if (pricebyNight && room.pricebyNight !== Number(pricebyNight)) matches = false;
+                if (pricebySection && room.pricebySection !== Number(pricebySection)) matches = false;
                 return matches;
             });
         }
 
+        // Calculate roomCount and occupiedCount
+        const roomCount = roomsList.length;
+        const occupiedCount = roomsList.filter(room => room.Status === 'Occupied').length;
+
         return res.status(200).json({
             success: true,
             data: roomsList,
+            roomCount,
+            occupiedCount,
             message: 'Rooms retrieved successfully'
         });
 

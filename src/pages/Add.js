@@ -5,61 +5,87 @@ import Card from '../components/common/Card';
 const Add = () => {
   const navigate = useNavigate();
 
-  // Handle dropdown selection and navigate to the chosen path
-  const handleSelectChange = (event) => {
-    const path = event.target.value;
+  // Handle button clicks and navigate to the chosen path
+  const handleButtonClick = (path) => {
     if (path) {
       navigate(path);
     }
   };
 
-  // Styles remain largely the same, with adjustments for the dropdown
+  // Styles for the container and buttons
   const styles = {
     container: {
-      width: '480px',
+      width: '100vw',
+      maxWidth: '480px',
       margin: 'auto',
-      padding: '3rem',
+      padding: '2rem',
       paddingBottom: 'calc(1rem + var(--footer-height))',
       minHeight: '100vh',
       boxSizing: 'border-box',
+    },
+    buttonBase: {
+      color: '#FFFFFF', // White text
+      padding: '0.75rem 1.5rem',
+      fontSize: '1.2rem',
+      fontWeight: 'bold',
+      border: 'none',
+      borderRadius: '25px', // Rounded edges to match the button style
+      cursor: 'pointer',
+      textAlign: 'center',
+      margin: '0.5rem 0',
+      transition: 'background-color 0.3s ease',
+    },
+    roomButton: {
+      backgroundColor: '#42A5F5', // Blue for Room
+    },
+    roomButtonHover: {
+      backgroundColor: '#1E88E5', // Darker blue for hover
+    },
+    bookingButton: {
+      backgroundColor: '#66BB6A', // Green for Booking
+    },
+    bookingButtonHover: {
+      backgroundColor: '#4CAF50', // Darker green for hover
+    },
+    propertyButton: {
+      backgroundColor: '#FFC107', // Keep yellow for Property (matches the original)
+    },
+    propertyButtonHover: {
+      backgroundColor: '#FFB300', // Slightly darker yellow for hover
     },
   };
 
   return (
     <div style={styles.container}>
-      <Card
-        header={<h2 className="text-xl sm:text-2xl font-bold text-neutral-800">Add New</h2>}
-        className="shadow-lg rounded-lg border border-neutral-200"
-        bodyClassName="p-4 sm:p-6"
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-          <label htmlFor="action-select" style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-            Choose an action:
-          </label>
-          <select
-            id="action-select"
-            onChange={handleSelectChange}
-            defaultValue=""
-            style={{
-              width: '100%',
-              maxWidth: '400px',
-              padding: '0.5rem',
-              fontSize: '1rem',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              backgroundColor: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="" disabled>
-              Select an action
-            </option>
-            <option value="/hotel/createroom">Create Room</option>
-            <option value="/booking/create">Create Booking</option>
-            <option value="/hotel/create">Create Property</option>
-          </select>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1rem' }}>
+        <div style={{ fontSize: '1.6rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+          What Do You Want To Add?
         </div>
-      </Card>
+        <button
+          style={{ ...styles.buttonBase, ...styles.roomButton }}
+          onClick={() => handleButtonClick('/hotel/createroom')}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = styles.roomButtonHover.backgroundColor)}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = styles.roomButton.backgroundColor)}
+        >
+          Room
+        </button>
+        <button
+          style={{ ...styles.buttonBase, ...styles.bookingButton }}
+          onClick={() => handleButtonClick('/booking/create')}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = styles.bookingButtonHover.backgroundColor)}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = styles.bookingButton.backgroundColor)}
+        >
+          Booking
+        </button>
+        <button
+          style={{ ...styles.buttonBase, ...styles.propertyButton }}
+          onClick={() => handleButtonClick('/hotel/create')}
+          onMouseOver={(e) => (e.currentTarget.style.backgroundColor = styles.propertyButtonHover.backgroundColor)}
+          onMouseOut={(e) => (e.currentTarget.style.backgroundColor = styles.propertyButton.backgroundColor)}
+        >
+          Property
+        </button>
+      </div>
     </div>
   );
 };
