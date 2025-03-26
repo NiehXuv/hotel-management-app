@@ -43,7 +43,7 @@ const createRoom = async (req, res) => {
         const { 
             RoomName = '', 
             Description = '', 
-            PriceByDay = 0, 
+            PriceByHour = 0, 
             PriceByNight = 0, 
             PriceBySection = 0, 
             RoomNumber 
@@ -69,14 +69,14 @@ const createRoom = async (req, res) => {
             });
         }
 
-        if (isNaN(Number(PriceByDay)) || isNaN(Number(PriceByNight)) || isNaN(Number(PriceBySection))) {
+        if (isNaN(Number(PriceByHour)) || isNaN(Number(PriceByNight)) || isNaN(Number(PriceBySection))) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Price values must be numeric' 
             });
         }
 
-        const prices = [Number(PriceByDay), Number(PriceByNight), Number(PriceBySection)];
+        const prices = [Number(PriceByHour), Number(PriceByNight), Number(PriceBySection)];
         if (prices.some(price => price < 0)) {
             return res.status(400).json({ 
                 success: false,
@@ -105,7 +105,7 @@ const createRoom = async (req, res) => {
         await set(roomRef, {
             RoomName: RoomName.trim(),
             Description: Description.trim(),
-            PriceByDay: Number(PriceByDay),
+            PriceByHour: Number(PriceByHour),
             PriceByNight: Number(PriceByNight),
             PriceBySection: Number(PriceBySection),
             Status: 'Available',

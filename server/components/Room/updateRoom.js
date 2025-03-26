@@ -4,7 +4,7 @@ const { ref, get, update } = require('firebase/database');
 const updateRoom = async (req, res) => {
   try {
     const { hotelId, roomNumber } = req.params;
-    const { RoomName, Description, PriceByDay, PriceByNight, PriceBySection } = req.body;
+    const { RoomName, Description, PriceByHour, PriceByNight, PriceBySection } = req.body;
 
     // Check if room exists
     const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}`);
@@ -42,14 +42,14 @@ const updateRoom = async (req, res) => {
       updates.Description = Description.trim();
     }
 
-    if (PriceByDay !== undefined) {
-      if (isNaN(Number(PriceByDay)) || Number(PriceByDay) < 0) {
+    if (PriceByHour !== undefined) {
+      if (isNaN(Number(PriceByHour)) || Number(PriceByHour) < 0) {
         return res.status(400).json({
           success: false,
-          error: 'PriceByDay must be a non-negative number',
+          error: 'PriceByHour must be a non-negative number',
         });
       }
-      updates.PriceByDay = Number(PriceByDay);
+      updates.PriceByHour = Number(PriceByHour);
     }
 
     if (PriceByNight !== undefined) {

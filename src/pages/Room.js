@@ -28,7 +28,7 @@ const Room = () => {
         if (!hotelResponse.ok) throw new Error('Failed to fetch hotel');
         const hotelData = await hotelResponse.json();
         if (hotelData.success) {
-          setHotelName(hotelData.data?.Name || 'Unknown Hotel');
+          setHotelName(hotelData.data?.name || 'Unknown Hotel');
         } else {
           setError(hotelData.error || 'Failed to load hotel name');
         }
@@ -63,7 +63,7 @@ const Room = () => {
       setError('Description must be at least 10 characters');
       return;
     }
-    if ([selectedRoom.PriceByDay, selectedRoom.PriceByNight, selectedRoom.PriceBySection].some(price => isNaN(Number(price)) || Number(price) < 0)) {
+    if ([selectedRoom.PriceByHour, selectedRoom.PriceByNight, selectedRoom.PriceBySection].some(price => isNaN(Number(price)) || Number(price) < 0)) {
       setError('Prices must be non-negative numbers');
       return;
     }
@@ -75,7 +75,7 @@ const Room = () => {
         body: JSON.stringify({
           RoomName: selectedRoom.RoomName.trim(),
           Description: selectedRoom.Description.trim(),
-          PriceByDay: Number(selectedRoom.PriceByDay),
+          PriceByHour: Number(selectedRoom.PriceByHour),
           PriceByNight: Number(selectedRoom.PriceByNight),
           PriceBySection: Number(selectedRoom.PriceBySection),
         }),
@@ -235,13 +235,13 @@ const Room = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <button
-          style={styles.backArrow}
-          onClick={() => navigate('/properties')}
-          aria-label="Back to Property"
-        >
-          ←
-        </button>
+      <button
+        style={styles.backArrow}
+        onClick={() => navigate(-1)} // Navigate to the previous page
+        aria-label="Back to Previous Page"
+      >
+  ←
+</button>
         <h2 className="text-xl font-bold text-neutral-800"> {hotelName} </h2>
       </div>
 
@@ -316,12 +316,12 @@ const Room = () => {
                   />
                 </label>
                 <label className="block mb-2">
-                  Price by Day:
+                  Price by Hour:
                   <input
                     style={styles.input}
                     type="number"
-                    value={selectedRoom.PriceByDay}
-                    onChange={(e) => setSelectedRoom({ ...selectedRoom, PriceByDay: e.target.value })}
+                    value={selectedRoom.PriceByHour}
+                    onChange={(e) => setSelectedRoom({ ...selectedRoom, PriceByHour: e.target.value })}
                     min="0"
                   />
                 </label>
