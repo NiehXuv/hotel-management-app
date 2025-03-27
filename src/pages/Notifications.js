@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Card from "../components/common/Card";
 import Button from "../components/common/Button";
@@ -7,19 +7,21 @@ import Button from "../components/common/Button";
 /**
  * Notification Page Component
  *
- * Displays a list of notifications for a specific hotel, including issues and activities.
+ * Displays a list of notifications for all hotels, including issues and activities.
  *
  * @module Pages/Notification
  */
 const Notifications = () => {
-  // Define styles object (consistent with PropertyDetails)
+  // Define styles object to match the screenshot
   const styles = {
     pageContainer: {
-      paddingBottom: "2em",
-      padding: "1.3em",
+      padding: "1em",
       width: "100vw",
       maxWidth: "480px",
-      marginBottom: "4em",
+      marginBottom: "5em", // Space for bottom navigation bar
+      backgroundColor: "#fff",
+      minHeight: "100vh",
+      boxSizing: "border-box",
     },
     loadingContainer: {
       display: "flex",
@@ -42,72 +44,100 @@ const Notifications = () => {
     },
     headerContainer: {
       display: "flex",
+      justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: "8px",
-    },
-    backButton: {
-      marginRight: "1em",
-      padding: "0.5empx",
-      borderRadius: "1em",
-      cursor: "pointer",
-      border: "none",
-      backgroundColor: "transparent",
-    },
-    backButtonHover: {
-      backgroundColor: "#e5e7eb",
+      marginBottom: "16px",
     },
     headerTitle: {
-      paddingLeft: "0.8em",
-      fontSize: "24px",
+      fontSize: "20px",
       fontWeight: "700",
+      color: "#000",
+    },
+    userInfo: {
+      display: "flex",
+      alignItems: "center",
+      fontSize: "14px",
+      color: "#666",
+    },
+    userAvatar: {
+      width: "24px",
+      height: "24px",
+      borderRadius: "50%",
+      backgroundColor: "#42A5F5",
+      marginLeft: "8px",
     },
     notificationCard: {
-      borderRadius: "2em",
-      padding: "0.3em",
-      paddingLeft: "1.5em",
-      marginBottom: "1em",
+      borderRadius: "1em",
+      padding: "12px",
+      marginBottom: "12px",
       boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
     },
     issueNotification: {
-      backgroundColor: "rgba(240, 75, 10, 0.32)", // Orange for issues
+      backgroundColor: "rgba(240, 75, 10, 0.32)", // Light orange for issues
     },
     activityNotification: {
-      backgroundColor: "rgba(21, 228, 149, 0.27)", // Green for activities
+      backgroundColor: "rgba(21, 228, 149, 0.27)", // Light green for activities
     },
     notificationMessage: {
       fontSize: "14px",
-      margin: "0 0 0.1em 0",
-      color: "black",
+      margin: "0 0 4px 0",
+      color: "#000",
     },
     notificationFooter: {
       display: "flex",
-      gap: "12px",
+      gap: "8px",
       alignItems: "center",
       fontSize: "12px",
-      color: "black",
+      color: "#666",
     },
     notificationUser: {
       fontWeight: "500",
     },
     notificationTime: {},
+    bottomNav: {
+      position: "fixed",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      display: "flex",
+      justifyContent: "space-around",
+      alignItems: "center",
+      backgroundColor: "#fff",
+      padding: "10px 0",
+      boxShadow: "0 -1px 3px rgba(0, 0, 0, 0.1)",
+      maxWidth: "480px",
+      margin: "0 auto",
+    },
+    navIcon: {
+      fontSize: "24px",
+      color: "#666",
+      cursor: "pointer",
+    },
+    navIconActive: {
+      color: "#42A5F5",
+    },
+    navLabel: {
+      fontSize: "12px",
+      color: "#666",
+    },
+    navLabelActive: {
+      color: "#42A5F5",
+    },
   };
 
-  const { hotelId } = useParams(); // Get hotelId from the route
   const navigate = useNavigate();
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth(); // Assuming useAuth provides user info
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch notifications when the component mounts
+  // Fetch notifications for all hotels when the component mounts
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `http://localhost:5000/notifications`
-        );
+        const response = await fetch(`http://localhost:5000/notifications`);
         if (!response.ok) {
           throw new Error("Failed to fetch notifications");
         }
@@ -127,9 +157,9 @@ const Notifications = () => {
     };
 
     fetchNotifications();
-  }, [hotelId]);
+  }, []);
 
-  // Format date for display
+  // Format date for display (e.g., "Mar 27, 09:28 AM")
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString("en-US", {
@@ -137,6 +167,7 @@ const Notifications = () => {
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -157,8 +188,8 @@ const Notifications = () => {
       <div style={styles.errorContainer}>
         <div style={{ textAlign: "center" }}>
           <p style={styles.errorText}>{error}</p>
-          <Button variant="outline" onClick={() => navigate(`/properties/${hotelId}`)}>
-            Back to Property
+          <Button variant="outline" onClick={() => navigate("/properties")}>
+            Back to Properties
           </Button>
         </div>
       </div>
@@ -169,8 +200,11 @@ const Notifications = () => {
     <div style={styles.pageContainer}>
       {/* Header */}
       <div style={styles.headerContainer}>
-        
         <h1 style={styles.headerTitle}>Notifications</h1>
+        <div style={styles.userInfo}>
+          <span>{user?.username || "hienvu"} - {user?.role || "Boss"}</span>
+          <div style={styles.userAvatar}></div>
+        </div>
       </div>
 
       {/* Notification List */}
@@ -208,6 +242,29 @@ const Notifications = () => {
           No notifications available
         </p>
       )}
+
+      {/* Bottom Navigation Bar */}
+      <div style={styles.bottomNav}>
+        <div style={{ textAlign: "center" }} onClick={() => navigate("/dashboard")}>
+          <span style={styles.navIcon}>📊</span>
+          <p style={styles.navLabel}>Dashboard</p>
+        </div>
+        <div style={{ textAlign: "center" }} onClick={() => navigate("/calendar")}>
+          <span style={styles.navIcon}>📅</span>
+          <p style={styles.navLabel}>Calendar</p>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <span style={{ ...styles.navIcon, ...styles.navIconActive }}>+</span>
+        </div>
+        <div style={{ textAlign: "center" }} onClick={() => navigate("/notifications")}>
+          <span style={{ ...styles.navIcon, ...styles.navIconActive }}>🔔</span>
+          <p style={{ ...styles.navLabel, ...styles.navLabelActive }}>Alerts</p>
+        </div>
+        <div style={{ textAlign: "center" }} onClick={() => navigate("/menu")}>
+          <span style={styles.navIcon}>☰</span>
+          <p style={styles.navLabel}>Menu</p>
+        </div>
+      </div>
     </div>
   );
 };
