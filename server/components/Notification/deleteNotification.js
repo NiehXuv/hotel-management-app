@@ -66,5 +66,16 @@ const deleteNotification = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const clearAllNotifications = async (req, res) => {
+    try {
+      const notificationsRef = ref(database, `Notifications`);
+      await set(notificationsRef, null);
+      console.log("All notifications cleared.");
+      res.status(200).json({ message: "All notifications cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing all notifications:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  };
 
-module.exports = { deleteNotification };
+module.exports = { deleteNotification, clearAllNotifications };

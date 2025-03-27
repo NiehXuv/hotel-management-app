@@ -50,7 +50,7 @@ const Notifications = () => {
     },
     headerTitle: {
       fontSize: "24px",
-      paddingLeft: '0.4em',
+      paddingLeft: "0.4em",
       fontWeight: "700",
       color: "#000",
     },
@@ -95,11 +95,19 @@ const Notifications = () => {
       fontWeight: "500",
     },
     notificationTime: {},
-    
+    clearAllButton: {
+      padding: "4px 8px",
+      fontSize: "12px",
+      backgroundColor: "#F04770",
+      color: "white",
+      border: "none",
+      borderRadius: "2em",
+      cursor: "pointer",
+    },
   };
 
   const navigate = useNavigate();
-  const { hasPermission, user } = useAuth(); // Assuming useAuth provides user info
+  const { hasPermission, user } = useAuth();
 
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -131,6 +139,31 @@ const Notifications = () => {
 
     fetchNotifications();
   }, []);
+
+  // Handle Clear All button click
+  const handleClearAll = async () => {
+    if (window.confirm("Are you sure you want to clear all notifications?")) {
+      try {
+        const response = await fetch("http://localhost:5000/notifications", {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to clear notifications");
+        }
+
+        const result = await response.json();
+        if (!result.message) {
+          throw new Error(result.error || "Failed to clear notifications");
+        }
+
+        setNotifications([]); // Clear the local state
+        console.log("All notifications cleared.");
+      } catch (err) {
+        setError("Failed to clear notifications");
+        console.error(err);
+      }
+    }
+  };
 
   // Format date for display (e.g., "Mar 27, 09:28 AM")
   const formatDateTime = (dateString) => {
@@ -174,7 +207,11 @@ const Notifications = () => {
       {/* Header */}
       <div style={styles.headerContainer}>
         <h1 style={styles.headerTitle}>Notifications</h1>
-        
+        {notifications.length > 0 && (
+          <button style={styles.clearAllButton} onClick={handleClearAll}>
+            Clear All
+          </button>
+        )}
       </div>
 
       {/* Notification List */}
@@ -212,8 +249,6 @@ const Notifications = () => {
           No notifications available
         </p>
       )}
-
-      
     </div>
   );
 };

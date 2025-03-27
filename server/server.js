@@ -45,12 +45,13 @@ const { updateEquipment } = require('./components/Equipment/updateEquipment');
 const { removeEquipment } = require('./components/Equipment/removeEquipment');
 
 const { getNotifications } = require("./components/Notification/getNotifications");
+const { deleteNotification } = require('./components/Notification/deleteNotification');
+const { clearAllNotifications } = require('./components/Notification/deleteNotification');
 
 
 
 // Staff
 const { listStaff } = require('./components/Staff/listStaff.js');
-const { deleteNotification } = require('./components/Notification/deleteNotification');
 
 const app = express();
 app.use(express.json());
@@ -106,6 +107,7 @@ app.get('/api/staff/list/:hotelId', listStaff);
 // Notification route
 app.get("/notifications", getNotifications);
 app.delete("/notifications/:notificationId", deleteNotification);
+app.delete("/notifications", clearAllNotifications);
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
