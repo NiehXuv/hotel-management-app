@@ -49,7 +49,8 @@ const Notifications = () => {
       marginBottom: "16px",
     },
     headerTitle: {
-      fontSize: "20px",
+      fontSize: "24px",
+      paddingLeft: '0.4em',
       fontWeight: "700",
       color: "#000",
     },
@@ -173,10 +174,7 @@ const Notifications = () => {
       {/* Header */}
       <div style={styles.headerContainer}>
         <h1 style={styles.headerTitle}>Notifications</h1>
-        <div style={styles.userInfo}>
-          <span>{user?.username || "hienvu"} - {user?.role || "Boss"}</span>
-          <div style={styles.userAvatar}></div>
-        </div>
+        
       </div>
 
       {/* Notification List */}
