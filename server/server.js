@@ -47,9 +47,6 @@ const { removeEquipment } = require('./components/Equipment/removeEquipment');
 const { getNotifications } = require("./components/Notification/getNotifications");
 const { deleteNotification } = require('./components/Notification/deleteNotification');
 const { clearAllNotifications } = require('./components/Notification/deleteNotification');
-
-
-
 // Staff
 const { listStaff } = require('./components/Staff/listStaff.js');
 

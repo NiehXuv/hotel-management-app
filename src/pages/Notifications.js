@@ -19,7 +19,7 @@ const Notifications = () => {
       width: "100vw",
       maxWidth: "480px",
       marginBottom: "5em", // Space for bottom navigation bar
-      backgroundColor: "#fff",
+      backgroundColor: "#f9f9f9",
       minHeight: "100vh",
       boxSizing: "border-box",
     },

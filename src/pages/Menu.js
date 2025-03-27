@@ -30,7 +30,7 @@ const Menu = () => {
       padding: "1rem",
       paddingBottom: "calc(1rem + 60px)", // Space for bottom navigation
       minHeight: "100vh",
-      backgroundColor: "white",
+      backgroundColor: "#f9f9f9",
       boxSizing: "border-box",
     },
     header: {
