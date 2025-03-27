@@ -94,35 +94,7 @@ const Notifications = () => {
       fontWeight: "500",
     },
     notificationTime: {},
-    bottomNav: {
-      position: "fixed",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      display: "flex",
-      justifyContent: "space-around",
-      alignItems: "center",
-      backgroundColor: "#fff",
-      padding: "10px 0",
-      boxShadow: "0 -1px 3px rgba(0, 0, 0, 0.1)",
-      maxWidth: "480px",
-      margin: "0 auto",
-    },
-    navIcon: {
-      fontSize: "24px",
-      color: "#666",
-      cursor: "pointer",
-    },
-    navIconActive: {
-      color: "#42A5F5",
-    },
-    navLabel: {
-      fontSize: "12px",
-      color: "#666",
-    },
-    navLabelActive: {
-      color: "#42A5F5",
-    },
+    
   };
 
   const navigate = useNavigate();
@@ -243,28 +215,7 @@ const Notifications = () => {
         </p>
       )}
 
-      {/* Bottom Navigation Bar */}
-      <div style={styles.bottomNav}>
-        <div style={{ textAlign: "center" }} onClick={() => navigate("/dashboard")}>
-          <span style={styles.navIcon}>📊</span>
-          <p style={styles.navLabel}>Dashboard</p>
-        </div>
-        <div style={{ textAlign: "center" }} onClick={() => navigate("/calendar")}>
-          <span style={styles.navIcon}>📅</span>
-          <p style={styles.navLabel}>Calendar</p>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <span style={{ ...styles.navIcon, ...styles.navIconActive }}>+</span>
-        </div>
-        <div style={{ textAlign: "center" }} onClick={() => navigate("/notifications")}>
-          <span style={{ ...styles.navIcon, ...styles.navIconActive }}>🔔</span>
-          <p style={{ ...styles.navLabel, ...styles.navLabelActive }}>Alerts</p>
-        </div>
-        <div style={{ textAlign: "center" }} onClick={() => navigate("/menu")}>
-          <span style={styles.navIcon}>☰</span>
-          <p style={styles.navLabel}>Menu</p>
-        </div>
-      </div>
+      
     </div>
   );
 };
