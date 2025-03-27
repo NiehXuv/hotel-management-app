@@ -49,6 +49,8 @@ const { deleteNotification } = require('./components/Notification/deleteNotifica
 const { clearAllNotifications } = require('./components/Notification/deleteNotification');
 // Staff
 const { listStaff } = require('./components/Staff/listStaff.js');
+const { financialReport } = require("./components/Reports/financialReport");
+
 
 const app = express();
 app.use(express.json());
@@ -105,6 +107,13 @@ app.get('/api/staff/list/:hotelId', listStaff);
 app.get("/notifications", getNotifications);
 app.delete("/notifications/:notificationId", deleteNotification);
 app.delete("/notifications", clearAllNotifications);
+
+app.get('/financial', financialReport);
+
+
+
+
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

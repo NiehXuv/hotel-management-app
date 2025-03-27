@@ -406,7 +406,7 @@ const Booking = () => {
 
       {/* Filter Section in Card */}
       {!loading && (
-        <Card>
+        <Card style={{borderRadius:'1.8em', padding:'auto'}}>
           <details>
             <summary style={{ cursor: 'pointer', fontSize: '1.1rem', listStyle: 'none' }}>
               Filter Bookings

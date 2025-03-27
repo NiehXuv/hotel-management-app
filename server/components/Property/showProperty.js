@@ -4,6 +4,7 @@ const { ref, get } = require("firebase/database");
 const showProperty = async (req, res) => {
   try {
     const { hotelId } = req.params;
+    const { startDate, endDate } = req.query;
 
     if (!hotelId) {
       return res.status(400).json({
@@ -12,7 +13,7 @@ const showProperty = async (req, res) => {
       });
     }
 
-    console.log(`Fetching data for hotelId: ${hotelId}`);
+    console.log(`Fetching data for hotelId: ${hotelId}, date range: ${startDate || 'N/A'} to ${endDate || 'N/A'}`);
 
     const hotelRef = ref(database, `Hotel/${hotelId}`);
     const hotelSnapshot = await get(hotelRef);
@@ -29,11 +30,9 @@ const showProperty = async (req, res) => {
     const roomsRef = ref(database, `Hotel/${hotelId}/Room`);
     const roomSnapshot = await get(roomsRef);
 
-    // Fetch bookings from the root /Booking path
     const bookingsRef = ref(database, `Booking`);
     const bookingsSnapshot = await get(bookingsRef);
 
-    // Fetch ratings from the root /Ratings path (hypothetical)
     const ratingsRef = ref(database, `Ratings`);
     const ratingsSnapshot = await get(ratingsRef);
 
@@ -115,10 +114,11 @@ const showProperty = async (req, res) => {
         .filter((room) => room !== null);
 
       totalRooms = roomsList.length;
-      occupiedRooms = roomsList.filter((room) => room.Status === "Occupied").length;
       availableRooms = roomsList.filter((room) => room.Status === "Available").length;
       needsCleaning = roomsList.filter((room) => room.Status === "Dirty").length;
       maintenance = roomsList.filter((room) => room.Status === "Maintenance").length;
+
+      // Calculate daily revenue based on current occupied rooms
       dailyRevenue = roomsList
         .filter((room) => room.Status === "Occupied")
         .reduce((sum, room) => sum + (room.PriceByNight || 0), 0);
@@ -146,7 +146,48 @@ const showProperty = async (req, res) => {
       console.log("No bookings found in /Booking");
     }
 
-    // Calculate weekly, monthly, and year-to-date revenue
+    // Calculate occupancy and revenue based on whether date range is provided
+    let occupancyRate = 0;
+    let revenueInRange = 0;
+
+    if (startDate && endDate) {
+      // Date range provided (used by Reports page)
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const daysInRange = (end - start) / (1000 * 60 * 60 * 24) + 1;
+      const totalRoomNights = totalRooms * daysInRange;
+      let occupiedRoomNights = 0;
+
+      allBookings.forEach((booking) => {
+        const bookIn = new Date(booking.bookIn);
+        const bookOut = new Date(booking.bookOut);
+
+        // Find the overlapping period with the date range
+        const stayStart = new Date(Math.max(bookIn, start));
+        const stayEnd = new Date(Math.min(bookOut, end));
+        const overlappingDays = Math.max(0, (stayEnd - stayStart) / (1000 * 60 * 60 * 24));
+
+        if (overlappingDays > 0) {
+          occupiedRoomNights += overlappingDays;
+
+          // Calculate revenue for this booking within the date range
+          const roomId = String(booking.roomId);
+          const priceByNight = roomPriceMap[roomId] || 0;
+          const totalPrice = priceByNight * overlappingDays;
+          revenueInRange += totalPrice;
+        }
+      });
+
+      occupiedRooms = occupiedRoomNights / daysInRange; // Average occupied rooms per day
+      occupancyRate = totalRoomNights > 0 ? (occupiedRoomNights / totalRoomNights) * 100 : 0;
+    } else {
+      // No date range provided (used by PropertyDetails page)
+      occupiedRooms = roomsList.filter((room) => room.Status === "Occupied").length;
+      occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
+      revenueInRange = 0; // Not applicable without a date range
+    }
+
+    // Calculate weekly, monthly, and year-to-date revenue (always calculated for PropertyDetails)
     let weeklyRevenue = 0;
     let monthlyRevenue = 0;
     let yearToDateRevenue = 0;
@@ -207,31 +248,25 @@ const showProperty = async (req, res) => {
         const revenue = calculateRevenueForPeriod(sevenDaysAgo, now);
         weeklyRevenue += revenue;
         console.log(`  Added to weeklyRevenue: ${revenue}`);
-      } else {
-        console.log(`  Booking does not overlap with last 7 days`);
       }
 
       if (bookIn <= now && bookOut >= thirtyDaysAgo) {
         const revenue = calculateRevenueForPeriod(thirtyDaysAgo, now);
         monthlyRevenue += revenue;
         console.log(`  Added to monthlyRevenue: ${revenue}`);
-      } else {
-        console.log(`  Booking does not overlap with last 30 days`);
       }
 
       if (bookIn <= now && bookOut >= yearStart) {
         const revenue = calculateRevenueForPeriod(yearStart, now);
         yearToDateRevenue += revenue;
         console.log(`  Added to yearToDateRevenue: ${revenue}`);
-      } else {
-        console.log(`  Booking does not overlap with year-to-date`);
       }
     });
 
     // Calculate average stay duration
     const averageStayDuration = validBookingCount > 0 ? (totalStayDays / validBookingCount).toFixed(1) : 0;
 
-    // Calculate average rating (hypothetical /Ratings node)
+    // Calculate average rating
     let averageRating = 0;
     if (ratingsSnapshot.exists()) {
       const ratingsData = ratingsSnapshot.val();
@@ -249,8 +284,6 @@ const showProperty = async (req, res) => {
     console.log(`Final monthlyRevenue: ${monthlyRevenue}`);
     console.log(`Final yearToDateRevenue: ${yearToDateRevenue}`);
 
-    const occupancyRate = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
-
     const hotelDetails = {
       hotelId,
       name: hotelData.Name,
@@ -261,18 +294,19 @@ const showProperty = async (req, res) => {
       status: hotelData.Status,
       roomStatistics: {
         totalRooms,
-        occupiedRooms,
+        occupiedRooms: Number(occupiedRooms.toFixed(0)),
         availableRooms,
         needsCleaning,
         maintenance,
         occupancyRate: Number(occupancyRate.toFixed(1)),
         dailyRevenue: Number(dailyRevenue.toFixed(2)),
         priceRange: priceRange.min === Infinity ? "N/A" : `$${priceRange.min}-${priceRange.max}`,
+        revenueInRange: Number(revenueInRange.toFixed(2)),
         weeklyRevenue: Number(weeklyRevenue.toFixed(2)),
         monthlyRevenue: Number(monthlyRevenue.toFixed(2)),
         yearToDateRevenue: Number(yearToDateRevenue.toFixed(2)),
-        averageStayDuration: Number(averageStayDuration), // Add to roomStatistics
-        averageRating: Number(averageRating), // Add to roomStatistics
+        averageStayDuration: Number(averageStayDuration),
+        averageRating: Number(averageRating),
       },
       rooms: roomsList,
       activities: allActivities,

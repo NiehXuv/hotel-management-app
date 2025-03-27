@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/common/Card';
+import Button from '../components/common/Button';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -21,7 +22,170 @@ const Customers = () => {
 
   const navigate = useNavigate();
 
-  // Fetch customers from the API
+  const styles = {
+    pageContainer: {
+      paddingBottom: '2em',
+      padding: '1em',
+      width: '100vw',
+      maxWidth: '480px',
+      marginBottom: '4em',
+    },
+    headerTitle: {
+      fontSize: '20px',
+      fontWeight: '700',
+      marginBottom: '12px',
+      textAlign: 'center',
+    },
+    searchContainer: {
+      marginBottom: '16px',
+      position: 'relative',
+    },
+    searchInput: {
+      padding: '8px 12px',
+      borderRadius: '1em',
+      border: '1px solid #e5e7eb',
+      fontSize: '14px',
+      width: '100%',
+      color: '#111827',
+    },
+    suggestions: {
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      backgroundColor: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: '1em',
+      zIndex: 10,
+      width: '100%',
+      maxHeight: '200px',
+      overflowY: 'auto',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    },
+    suggestionItem: {
+      padding: '8px 12px',
+      cursor: 'pointer',
+      color: '#111827',
+      fontSize: '14px',
+    },
+    customerCard: {
+      marginBottom: '16px',
+      padding: '16px',
+      backgroundColor: 'white',
+      borderRadius: '2em',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    },
+    infoRow: {
+      marginBottom: '8px',
+      display: 'flex',
+      justifyContent: 'space-between',
+    },
+    label: {
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#666',
+    },
+    value: {
+      fontSize: '14px',
+      color: '#111827',
+    },
+    buttonContainer: {
+      display: 'flex',
+      justifyContent: 'flex-end',
+      gap: '12px',
+      marginTop: '12px',
+    },
+    loadingContainer: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: '48px 0',
+    },
+    loadingText: {
+      color: '#666',
+      fontSize: '14px',
+    },
+    errorText: {
+      color: '#dc2626',
+      fontSize: '14px',
+      textAlign: 'center',
+      padding: '8px 0',
+    },
+    successText: {
+      color: '#10B981',
+      fontSize: '14px',
+      textAlign: 'center',
+      padding: '8px 0',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      borderRadius: '1em',
+      marginBottom: '16px',
+    },
+    noDataText: {
+      fontSize: '14px',
+      color: '#999',
+      textAlign: 'center',
+      padding: '8px 0',
+    },
+    modalOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    modalContent: {
+      backgroundColor: 'white',
+      padding: '16px',
+      borderRadius: '2em',
+      width: '90%',
+      maxWidth: '400px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+      position: 'relative',
+    },
+    modalHeader: {
+      fontSize: '18px',
+      fontWeight: '600',
+      marginBottom: '12px',
+      color: '#111827',
+    },
+    modalCloseButton: {
+      position: 'absolute',
+      top: '8px',
+      right: '8px',
+      background: 'none',
+      border: 'none',
+      fontSize: '20px',
+      cursor: 'pointer',
+      color: '#666',
+    },
+    form: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+    },
+    formGroup: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px',
+    },
+    formLabel: {
+      fontSize: '14px',
+      fontWeight: '600',
+      color: '#666',
+    },
+    formInput: {
+      padding: '8px 12px',
+      borderRadius: '1em',
+      border: '1px solid #e5e7eb',
+      fontSize: '14px',
+      color: '#111827',
+    },
+  };
+
   useEffect(() => {
     const fetchCustomers = async () => {
       setLoading(true);
@@ -29,11 +193,8 @@ const Customers = () => {
       try {
         const response = await fetch('http://localhost:5000/customer/list', {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
-
         const data = await response.json();
         if (response.ok) {
           const customerArray = Object.keys(data).map((key) => ({
@@ -55,26 +216,21 @@ const Customers = () => {
     fetchCustomers();
   }, []);
 
-  // Filter customers based on search query
   const filteredCustomers = customers.filter((customer) => {
     const fullName = `${customer.FirstName || ''} ${customer.LastName || ''}`.toLowerCase();
-    const query = searchQuery.toLowerCase();
-    return fullName.includes(query);
+    return fullName.includes(searchQuery.toLowerCase());
   });
 
-  // Show success message and auto-hide after 3 seconds
   const showSuccessMessage = (message) => {
     setSuccessMessage(message);
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
-  // Show error message and auto-hide after 5 seconds
   const showErrorMessage = (message) => {
     setError(message);
     setTimeout(() => setError(''), 5000);
   };
 
-  // Handle customer creation
   const handleCreateCustomer = async (e) => {
     e.preventDefault();
     if (!formData.FirstName || formData.FirstName.trim() === '') {
@@ -84,9 +240,7 @@ const Customers = () => {
     try {
       const response = await fetch('http://localhost:5000/customer/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
       const data = await response.json();
@@ -103,15 +257,12 @@ const Customers = () => {
     }
   };
 
-  // Handle customer removal
   const handleRemoveCustomer = async (customerId) => {
     if (!window.confirm(`Are you sure you want to delete customer ${customerId}?`)) return;
     try {
       const response = await fetch(`http://localhost:5000/customer/delete/${customerId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json();
       if (response.ok) {
@@ -125,7 +276,6 @@ const Customers = () => {
     }
   };
 
-  // Open the update modal with the customer's current data
   const handleUpdateCustomer = (customer) => {
     setSelectedCustomer(customer);
     setFormData({
@@ -138,16 +288,11 @@ const Customers = () => {
     setIsUpdateModalOpen(true);
   };
 
-  // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission to update the customer
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
     if (!formData.FirstName || formData.FirstName.trim() === '') {
@@ -158,9 +303,7 @@ const Customers = () => {
     try {
       const response = await fetch(`http://localhost:5000/customer/update/${selectedCustomer.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
       const data = await response.json();
@@ -182,13 +325,11 @@ const Customers = () => {
     }
   };
 
-  // Open the create modal
   const openCreateModal = () => {
     setFormData({ FirstName: '', LastName: '', Email: '', PhoneNumber: '', Note: '' });
     setIsCreateModalOpen(true);
   };
 
-  // Close the modals and reset form data
   const closeModal = () => {
     setIsCreateModalOpen(false);
     setIsUpdateModalOpen(false);
@@ -196,223 +337,11 @@ const Customers = () => {
     setFormData({ FirstName: '', LastName: '', Email: '', PhoneNumber: '', Note: '' });
   };
 
-  const styles = {
-    container: {
-      width: '100vw',
-      maxWidth: '500px',
-      margin: 'auto',
-      padding: '1rem',
-      paddingBottom: 'calc(1rem + var(--footer-height))',
-      minHeight: '100vh',
-      boxSizing: 'border-box',
-    },
-    title: {
-      textAlign: 'center',
-    },
-    searchContainer: {
-      width: '80%',
-      margin: 'auto',
-      position: 'relative',
-      marginBottom: '2rem',
-    },
-    searchInput: {
-      padding: '0.5rem',
-      width: '100%',
-      border: '1px solid #e5e7eb',
-      borderRadius: '0.25rem',
-      fontSize: '0.875rem',
-    },
-    suggestions: {
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      backgroundColor: 'white',
-      border: '1px solid #e5e7eb',
-      borderRadius: '0.25rem',
-      zIndex: 10,
-      width: '100%',
-      maxHeight: '200px',
-      overflowY: 'auto',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-    },
-    suggestionItem: {
-      padding: '0.5rem',
-      cursor: 'pointer',
-      color: '#374151',
-    },
-    suggestionItemHover: {
-      backgroundColor: '#f3f4f6',
-    },
-    createButton: {
-      display: 'block',
-      margin: '0 auto 1rem',
-      padding: '0.5rem 1rem',
-      backgroundColor: '#3b82f6',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '0.25rem',
-      fontSize: '0.875rem',
-      cursor: 'pointer',
-      transition: 'background-color 0.3s ease',
-    },
-    createButtonHover: {
-      backgroundColor: '#2563eb',
-    },
-    customerCard: {
-      width: '80%',
-      margin: 'auto',
-      marginBottom: '1rem',
-      borderRadius: '0.5rem',
-      border: '1px solid #e5e7eb',
-      backgroundColor: '#fff',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-    },
-    customerInfo: {
-      padding: '1rem',
-      fontSize: '0.875rem',
-      color: '#374151',
-    },
-    infoRow: {
-      marginBottom: '0.25rem',
-    },
-    label: {
-      fontWeight: '500',
-      color: '#1f2937',
-    },
-    value: {
-      color: '#374151',
-    },
-    buttonContainer: {
-      display: 'flex',
-      justifyContent: 'flex-end',
-      gap: '0.5rem',
-      padding: '0.5rem 1rem',
-      borderTop: '1px solid #e5e7eb',
-    },
-    updateButton: {
-      color: '#3b82f6',
-      background: 'none',
-      border: 'none',
-      padding: '0.25rem 0.5rem',
-      fontSize: '0.875rem',
-      cursor: 'pointer',
-      transition: 'color 0.3s ease',
-    },
-    deleteButton: {
-      color: '#ef4444',
-      background: 'none',
-      border: 'none',
-      padding: '0.25rem 0.5rem',
-      fontSize: '0.875rem',
-      cursor: 'pointer',
-      transition: 'color 0.3s ease',
-    },
-    loadingText: {
-      marginTop: '1rem',
-      fontSize: '0.875rem',
-      color: '#6b7280',
-      textAlign: 'center',
-    },
-    successMessage: {
-      marginTop: '1rem',
-      textAlign: 'center',
-      color: '#10b981',
-      fontSize: '0.875rem',
-      padding: '0.5rem',
-      backgroundColor: '#ecfdf5',
-      borderRadius: '0.25rem',
-    },
-    errorMessage: {
-      marginTop: '1rem',
-      textAlign: 'center',
-      color: '#dc2626',
-      fontSize: '0.875rem',
-      padding: '0.5rem',
-      backgroundColor: '#fef2f2',
-      borderRadius: '0.25rem',
-    },
-    noData: {
-      marginTop: '1rem',
-      textAlign: 'center',
-      color: '#6b7280',
-    },
-    modalOverlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    },
-    modalContent: {
-      backgroundColor: '#fff',
-      padding: '1.5rem',
-      borderRadius: '0.5rem',
-      width: '90%',
-      maxWidth: '400px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      position: 'relative',
-    },
-    modalHeader: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-      marginBottom: '1rem',
-      color: '#1f2937',
-    },
-    modalCloseButton: {
-      position: 'absolute',
-      top: '0.5rem',
-      right: '0.5rem',
-      background: 'none',
-      border: 'none',
-      fontSize: '1.25rem',
-      cursor: 'pointer',
-      color: '#6b7280',
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '1rem',
-    },
-    formGroup: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.25rem',
-    },
-    formLabel: {
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      color: '#1f2937',
-    },
-    formInput: {
-      padding: '0.5rem',
-      border: '1px solid #e5e7eb',
-      borderRadius: '0.25rem',
-      fontSize: '0.875rem',
-      color: '#374151',
-    },
-    formButton: {
-      padding: '0.5rem 1rem',
-      backgroundColor: '#3b82f6',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '0.25rem',
-      fontSize: '0.875rem',
-      cursor: 'pointer',
-    },
-  };
-
   return (
-    <div style={styles.container} className="sm:max-w-md mx-auto mt-6 px-4 overflow-y-auto">
-      <h2 style={styles.title} className="text-xl font-bold text-neutral-800 mb-4">
-        Customer List
-      </h2>
+    <div style={styles.pageContainer}>
+      <h2 style={styles.headerTitle}>Customer List</h2>
 
-      {/* Search Bar with Recommendations */}
+      {/* Search Bar */}
       <div style={styles.searchContainer}>
         <input
           type="text"
@@ -428,7 +357,7 @@ const Customers = () => {
                 key={customer.id}
                 style={styles.suggestionItem}
                 onClick={() => setSearchQuery(`${customer.FirstName} ${customer.LastName}`)}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = styles.suggestionItemHover.backgroundColor)}
+                onMouseEnter={(e) => (e.target.style.backgroundColor = '#f3f4f6')}
                 onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
               >
                 {customer.FirstName} {customer.LastName}
@@ -438,75 +367,71 @@ const Customers = () => {
         )}
       </div>
 
+      {/* Success/Error Messages */}
+      {successMessage && <p style={styles.successText}>{successMessage}</p>}
+      {error && <p style={styles.errorText}>{error}</p>}
+
       {/* Customer List */}
       {loading ? (
-        <p style={styles.loadingText}>Loading customers...</p>
+        <div style={styles.loadingContainer}>
+          <p style={styles.loadingText}>Loading customers...</p>
+        </div>
       ) : filteredCustomers.length === 0 ? (
-        <p style={styles.noData} className="text-sm">
+        <p style={styles.noDataText}>
           {searchQuery ? 'No matching customers' : 'No customers found.'}
         </p>
       ) : (
         filteredCustomers.map((customer) => (
-          <Card key={customer.id} style={styles.customerCard} className="rounded-lg">
-            <div style={styles.customerInfo}>
+          <Card key={customer.id} style={styles.customerCard}>
+            <div>
               <div style={styles.infoRow}>
-                <span style={styles.label}>First Name: </span>
+                <span style={styles.label}>First Name:</span>
                 <span style={styles.value}>{customer.FirstName || '-'}</span>
               </div>
               <div style={styles.infoRow}>
-                <span style={styles.label}>Last Name: </span>
+                <span style={styles.label}>Last Name:</span>
                 <span style={styles.value}>{customer.LastName || '-'}</span>
               </div>
               <div style={styles.infoRow}>
-                <span style={styles.label}>Email: </span>
+                <span style={styles.label}>Email:</span>
                 <span style={styles.value}>{customer.Email || '-'}</span>
               </div>
               <div style={styles.infoRow}>
-                <span style={styles.label}>Phone Number: </span>
+                <span style={styles.label}>Phone Number:</span>
                 <span style={styles.value}>{customer.PhoneNumber || '-'}</span>
               </div>
               <div style={styles.infoRow}>
-                <span style={styles.label}>Note: </span>
+                <span style={styles.label}>Note:</span>
                 <span style={styles.value}>{customer.Note || '-'}</span>
               </div>
             </div>
             <div style={styles.buttonContainer}>
-              <button
-                style={styles.updateButton}
+              <Button
+                variant="text"
                 onClick={() => handleUpdateCustomer(customer)}
-                onMouseEnter={(e) => (e.target.style.color = '#2563eb')}
-                onMouseLeave={(e) => (e.target.style.color = '#3b82f6')}
               >
                 Update
-              </button>
-              <button
-                style={styles.deleteButton}
+              </Button>
+              <Button
+                variant="text"
                 onClick={() => handleRemoveCustomer(customer.id)}
-                onMouseEnter={(e) => (e.target.style.color = '#dc2626')}
-                onMouseLeave={(e) => (e.target.style.color = '#ef4444')}
+                style={{ color: '#dc2626' }}
               >
                 Delete
-              </button>
+              </Button>
             </div>
           </Card>
         ))
       )}
 
       {/* Create New Customer Button */}
-      <button
-        style={styles.createButton}
+      <Button
+        variant="primary"
         onClick={openCreateModal}
-        onMouseEnter={(e) => (e.target.style.backgroundColor = styles.createButtonHover.backgroundColor)}
-        onMouseLeave={(e) => (e.target.style.backgroundColor = styles.createButton.backgroundColor)}
+        style={{ display: 'block', margin: '0 auto 16px', backgroundColor: '#FFD167', color: '#fff', padding: '0.2em 0.8em', borderRadius: '2em' }}
       >
         Create New Customer
-      </button>
-
-      {/* Success Message */}
-      {successMessage && <p style={styles.successMessage}>{successMessage}</p>}
-
-      {/* Error Message */}
-      {error && <p style={styles.errorMessage}>{error}</p>}
+      </Button>
 
       {/* Create Customer Modal */}
       {isCreateModalOpen && (
@@ -568,9 +493,9 @@ const Customers = () => {
                   style={styles.formInput}
                 />
               </div>
-              <button type="submit" style={styles.formButton}>
+              <Button type="submit" variant="primary" style={{ backgroundColor: '#FFD167', color: '#fff' }}>
                 Create Customer
-              </button>
+              </Button>
             </form>
           </div>
         </div>
@@ -636,9 +561,9 @@ const Customers = () => {
                   style={styles.formInput}
                 />
               </div>
-              <button type="submit" style={styles.formButton}>
+              <Button type="submit" variant="primary" style={{ backgroundColor: '#FFD167', color: '#fff' }}>
                 Save Changes
-              </button>
+              </Button>
             </form>
           </div>
         </div>

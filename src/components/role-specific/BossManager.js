@@ -2,23 +2,81 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import {FaCalendarWeek} from 'react-icons/fa';
-/**
- * Boss and Manager Dashboard Component
- * Shows management-focused widgets and statistics
- * 
- * @param {Object} props - Component props
- * @param {Object} props.statistics - Statistics data for dashboard
- */
+import { FaCalendarWeek } from 'react-icons/fa';
+
 const BossManagerDashboard = ({ statistics }) => {
   const navigate = useNavigate();
-  
-  // Navigate to create task page - Not implemented yet
-  // const handleCreateTask = () => {
-  //   navigate('/tasks/create');
-  // };
-  
-  // Navigate to properties page
+
+  const styles = {
+    pageContainer: {
+      paddingBottom: '2em',
+      padding: '0.2em',
+      width: '100%',
+      maxWidth: '480px',
+      marginBottom: '4em',
+    },
+    gridContainer: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '12px',
+      marginBottom: '16px',
+    },
+    card: {
+      marginBottom: '16px',
+      padding: '16px',
+      backgroundColor: 'white',
+      borderRadius: '2em',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    },
+    metricCard: {
+      backgroundColor: 'white',
+      borderRadius: '1em',
+      padding: '16px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    },
+    metricTitle: {
+      fontSize: '1em',
+      fontWeight: '600',
+      color: '#666',
+      marginBottom: '8px',
+    },
+    metricValue: {
+      fontSize: '1.6em',
+      fontWeight: '700',
+      color: '#111827',
+      marginBottom: '4px',
+    },
+    metricSubtext: {
+      fontSize: '12px',
+      color: '#999',
+    },
+    sectionTitle: {
+      fontSize: '18px',
+      fontWeight: '600',
+      marginBottom: '12px',
+    },
+    flexContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '12px',
+    },
+    flexItem: {
+      flex: 1,
+    },
+    button: {
+      margin: '0.4em auto',
+    display: 'block',
+    padding: '0.2em 0.8em',
+    backgroundColor: '#FFD167',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '2em',
+    fontSize: '16px',
+    cursor: 'pointer',
+    textAlign: 'center',
+    },
+  };
+
   const handleViewCalendar = () => {
     navigate('/calendar');
   };
@@ -26,162 +84,162 @@ const BossManagerDashboard = ({ statistics }) => {
   const handleViewProperties = () => {
     navigate('/properties');
   };
-  
-  // Navigate to reports page
+
   const handleViewReports = () => {
     navigate('/reports');
   };
-  
-  // Navigate to users page
+
   const handleViewUsers = () => {
     navigate('/users');
   };
-  
+
   return (
-    <div className="mb-6">
+    <div style={styles.pageContainer}>
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        
-        {/* <Button 
-          variant="primary" 
-          onClick={handleCreateTask}
-          className="flex items-center justify-center"
-        >
-          <span className="mr-2">✏️</span>
-          Create Task
-        </Button> */}
-        
+      <div style={styles.gridContainer}>
         <Button 
           variant="outline" 
           onClick={handleViewCalendar}
-          className="flex items-center justify-center"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <span className="mr-2"><FaCalendarWeek /></span>
+          <FaCalendarWeek style={{ marginRight: '8px' }} />
           View Calendar
         </Button>
       </div>
-      
+
       {/* Key Statistics */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="bg-primary-color/10 border-l-4 border-primary-color">
-          <h3 className="text-sm font-semibold text-neutral-600">Occupancy Rate</h3>
-          <p className="text-2xl font-bold text-primary-color">{statistics.occupancyRate}%</p>
-          <p className="text-xs text-neutral-500 mt-1">
+      <div style={styles.gridContainer}>
+        <Card style={styles.metricCard}>
+          <h3 style={styles.metricTitle}>Occupancy Rate</h3>
+          <p style={styles.metricValue}>{statistics.occupancyRate}%</p>
+          <p style={styles.metricSubtext}>
             {statistics.occupiedRooms} of {statistics.totalRooms} rooms
           </p>
         </Card>
         
-        <Card className="bg-warning-color/10 border-l-4 border-warning-color">
-          <h3 className="text-sm font-semibold text-neutral-600">Pending Tasks</h3>
-          <p className="text-2xl font-bold text-warning-color">{statistics.pendingTasks}</p>
-          <p className="text-xs text-neutral-500 mt-1">
+        <Card style={styles.metricCard}>
+          <h3 style={styles.metricTitle}>Pending Tasks</h3>
+          <p style={styles.metricValue}>{statistics.pendingTasks}</p>
+          <p style={styles.metricSubtext}>
             {statistics.criticalTasks} critical
           </p>
         </Card>
       </div>
-      
+
       {/* Properties Overview */}
-      <Card
-        header={<h2 className="text-lg font-semibold">Properties Overview</h2>}
-        className="mb-4"
-      >
-        <div className="flex justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-medium text-neutral-600">Total Properties</h3>
-            <p className="text-xl font-semibold">{statistics.totalProperties}</p>
+      <Card style={styles.card}>
+        <h2 style={styles.sectionTitle}>Properties Overview</h2>
+        <div style={styles.flexContainer}>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Total Properties</h3>
+            <p style={styles.metricValue}>{statistics.totalProperties}</p>
           </div>
-          
-          <div>
-            <h3 className="text-sm font-medium text-neutral-600">Total Rooms</h3>
-            <p className="text-xl font-semibold">{statistics.totalRooms}</p>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Total Rooms</h3>
+            <p style={styles.metricValue}>{statistics.totalRooms}</p>
           </div>
         </div>
-        
         <Button 
           variant="outline" 
-          size="sm" 
           onClick={handleViewProperties}
-          fullWidth
+          style={styles.button}
         >
           Property Details
         </Button>
       </Card>
-      
+
       {/* Financial Overview */}
-      <Card
-        header={<h2 className="text-lg font-semibold">Financial Overview</h2>}
-        className="mb-4"
-      >
-        <div className="flex justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-medium text-neutral-600">Monthly Revenue</h3>
-            <p className="text-xl font-semibold">${statistics.monthlyRevenue.toLocaleString()}</p>
+      <Card style={styles.card}>
+        <h2 style={styles.sectionTitle}>Financial Overview</h2>
+        <div style={styles.flexContainer}>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Monthly Revenue</h3>
+            <p style={styles.metricValue}>${statistics.monthlyRevenue.toLocaleString()}</p>
           </div>
-          
-          <div>
-            <h3 className="text-sm font-medium text-neutral-600">Pending Invoices</h3>
-            <p className="text-xl font-semibold">{statistics.pendingInvoices}</p>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Pending Invoices</h3>
+            <p style={styles.metricValue}>{statistics.pendingInvoices}</p>
           </div>
         </div>
-        
         <Button 
           variant="outline" 
-          size="sm" 
           onClick={handleViewReports}
-          fullWidth
+          style={styles.button}
         >
           View Reports
         </Button>
       </Card>
-      
-          
-      {/* Staff Section - Only for Boss */} 
-      {/* <Card
-        header={<h2 className="text-lg font-semibold">Staff Overview</h2>}
-        className="mb-4"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-primary-color flex items-center justify-center text-white mr-2">
+
+      {/* Staff Section - Commented out but styled for consistency */}
+      {/* <Card style={styles.card}>
+        <h2 style={styles.sectionTitle}>Staff Overview</h2>
+        <div style={{ ...styles.flexContainer, gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: '#42A5F5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              marginRight: '8px'
+            }}>
               👨‍💼
             </div>
             <div>
-              <h3 className="text-sm font-medium">Managers</h3>
-              <p className="text-xs text-neutral-500">3 active</p>
+              <h3 style={styles.metricTitle}>Managers</h3>
+              <p style={styles.metricSubtext}>3 active</p>
             </div>
           </div>
-          
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-success-color flex items-center justify-center text-white mr-2">
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: '#10B981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              marginRight: '8px'
+            }}>
               🧹
             </div>
             <div>
-              <h3 className="text-sm font-medium">Cleaners</h3>
-              <p className="text-xs text-neutral-500">8 active</p>
+              <h3 style={styles.metricTitle}>Cleaners</h3>
+              <p style={styles.metricSubtext}>8 active</p>
             </div>
           </div>
-          
-          <div className="flex items-center">
-            <div className="w-8 h-8 rounded-full bg-info-color flex items-center justify-center text-white mr-2">
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              backgroundColor: '#3B82F6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              marginRight: '8px'
+            }}>
               💁‍♀️
             </div>
             <div>
-              <h3 className="text-sm font-medium">Reception</h3>
-              <p className="text-xs text-neutral-500">5 active</p>
+              <h3 style={styles.metricTitle}>Reception</h3>
+              <p style={styles.metricSubtext}>5 active</p>
             </div>
-          </div>
+          </divcountries>
         </div>
-        
         <Button 
           variant="outline" 
-          size="sm" 
           onClick={handleViewUsers}
-          fullWidth
+          style={{ width: '100%' }}
         >
           Manage Staff
         </Button>
       </Card> */}
-      
     </div>
   );
 };

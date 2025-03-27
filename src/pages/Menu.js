@@ -11,7 +11,7 @@ const Menu = () => {
     { label: "Customer Setting", path: "/customer", icon: <FaUser /> },
     { label: "Booking Setting", path: "/booking", icon: <FaCalendar /> },
     { label: "User Setting", path: "/user", icon: <FaCog /> },
-    { label: "Financial Report", path: "/financial", icon: <FaChartLine /> },
+    { label: "Financial Report", path: "/reports", icon: <FaChartLine /> },
   ];
 
   // Define menu items for "Support"
@@ -82,7 +82,7 @@ const Menu = () => {
     },
     icon: {
       marginRight: "12px",
-      color: "#06D7A0", // Blue icon color
+      color: "#FFD167", // Blue icon color
       fontSize: "20px",
     },
     chevron: {
