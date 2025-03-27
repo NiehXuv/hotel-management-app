@@ -1,6 +1,6 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, get, set, update } = require("firebase/database");
-
+const { addNotification } = require("../Notification/notificationHelper");
 const createActivity = async (req, res) => {
     try {
         const { hotelId, roomNumber } = req.params; // Get hotelId and roomNumber from URL
@@ -41,6 +41,10 @@ const createActivity = async (req, res) => {
 
         // Update the ActivityCounter
         await set(counterRef, nextId);
+
+        // Add notification
+        const message = `Activity created in Room ${roomNumber}: ${details}`;
+        await addNotification(hotelId, "Activity", "Created", message, roomNumber, user);
 
         return res.status(201).json({
             success: true,

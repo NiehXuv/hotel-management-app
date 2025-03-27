@@ -1,6 +1,6 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, get, set } = require("firebase/database");
-
+const { addNotification } = require("../Notification/notificationHelper");
 const createIssue = async (req, res) => {
     try {
         const { hotelId, roomNumber } = req.params; // Get hotelId and roomNumber from URL
@@ -40,7 +40,8 @@ const createIssue = async (req, res) => {
 
         // Update the IssueCounter
         await set(counterRef, nextId);
-
+        const message = `Issue created in Room ${roomNumber}: ${description}`;
+        await addNotification(hotelId, "Issue", "Created", message, roomNumber);
         return res.status(201).json({
             success: true,
             message: "Issue created successfully",

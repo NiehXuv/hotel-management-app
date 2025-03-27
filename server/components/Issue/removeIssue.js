@@ -1,5 +1,6 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, get, set, remove } = require("firebase/database");
+const { addNotification } = require("../Notification/notificationHelper");
 
 const removeIssue = async (req, res) => {
     try {
@@ -66,6 +67,9 @@ const removeIssue = async (req, res) => {
         const newCounterValue = remainingIssues.length; // New highest ID
         await set(counterRef, newCounterValue);
 
+        // Add notification
+        const message = `Issue deleted in Room ${roomNumber}`;
+        await addNotification(hotelId, "Issue", "Deleted", message, roomNumber);
         return res.status(200).json({
             success: true,
             message: "Issue removed successfully and IDs reassigned"

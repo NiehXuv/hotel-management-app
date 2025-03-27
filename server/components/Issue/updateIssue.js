@@ -1,6 +1,6 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, update } = require("firebase/database");
-
+const { addNotification } = require("../Notification/notificationHelper");
 const updateIssue = async (req, res) => {
     try {
         const { hotelId, roomNumber, issueId } = req.params;
@@ -20,6 +20,10 @@ const updateIssue = async (req, res) => {
         if (status === "Resolved") updates.ResolvedAt = new Date().toISOString();
 
         await update(issueRef, updates);
+
+        // Add notification
+    const message = `Issue updated in Room ${roomNumber}: Status changed to ${status}`;
+    await addNotification(hotelId, "Issue", "Updated", message, roomNumber);
 
         return res.status(200).json({
             success: true,

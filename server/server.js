@@ -44,7 +44,7 @@ const { createEquipment } = require('./components/Equipment/createEquipment');
 const { updateEquipment } = require('./components/Equipment/updateEquipment');
 const { removeEquipment } = require('./components/Equipment/removeEquipment');
 
-
+const { getNotifications } = require("./components/Notification/getNotifications");
 
 
 
@@ -102,7 +102,8 @@ app.delete('/hotels/:hotelId/rooms/:roomNumber/equipment/:equipmentId', removeEq
 
 // Staff
 app.get('/api/staff/list/:hotelId', listStaff);
-
+// Notification route
+app.get("/notifications", getNotifications);
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

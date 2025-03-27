@@ -1,6 +1,6 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, update } = require("firebase/database");
-
+const { addNotification } = require("../Notification/notificationHelper");
 const updateActivity = async (req, res) => {
     try {
         const { hotelId, roomNumber, activityId } = req.params;
@@ -21,7 +21,9 @@ const updateActivity = async (req, res) => {
         updates.Timestamp = new Date().toISOString();
 
         await update(activityRef, updates);
-
+        // Add notification
+    const message = `Activity updated in Room ${roomNumber}`;
+    await addNotification(hotelId, "Activity", "Updated", message, roomNumber);
         return res.status(200).json({
             success: true,
             message: "Activity updated successfully"

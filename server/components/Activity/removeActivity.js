@@ -1,6 +1,6 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, get, set, remove } = require("firebase/database");
-
+const { addNotification } = require("../Notification/notificationHelper");
 const removeActivity = async (req, res) => {
     try {
         const { hotelId, roomNumber, activityId } = req.params;
@@ -65,6 +65,10 @@ const removeActivity = async (req, res) => {
         const counterRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}/ActivityCounter`);
         const newCounterValue = remainingActivities.length; // New highest ID
         await set(counterRef, newCounterValue);
+
+        // Add notification
+    const message = `Activity deleted in Room ${roomNumber}`;
+    await addNotification(hotelId, "Activity", "Deleted", message, roomNumber, activityData.User);
 
         return res.status(200).json({
             success: true,
