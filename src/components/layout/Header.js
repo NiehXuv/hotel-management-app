@@ -34,7 +34,7 @@ const Header = () => {
       <div className="flex justify-between items-center h-full px-md max-w-[480px] mx-auto">
         {/* App Logo/Title */}
         <div className="flex items-center">
-          <h1 className="text-lg font-semibold text-primary">Heart of Hoan Kiem</h1>
+          <h1 className="text-lg font-semibold text-primary">Inspirest Booking</h1>
         </div>
         
         {/* User Profile Button */}

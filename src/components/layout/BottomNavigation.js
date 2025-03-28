@@ -28,9 +28,11 @@ const BottomNavigation = () => {
     settings: { label: 'Settings', icon: <MdSettings />, path: '/settings' },
   };
 
-  const sideItems = navigationItems.filter((item) => item !== 'properties').slice(0, 4);
+  // Define the five options explicitly
+  const selectedItems = ['dashboard', 'tasks', 'properties', 'notifications', 'users'];
+  const sideItems = selectedItems.filter((item) => item !== 'properties'); // Exclude the center "Add" button
   const leftItems = sideItems.slice(0, 2); // Dashboard, Calendar
-  const rightItems = sideItems.slice(2, 4); // Alerts, Users
+  const rightItems = sideItems.slice(2, 4); // Alerts, Menu
 
   const isActive = (path) => location.pathname === path;
   const handleNavigation = (path) => navigate(path);
@@ -51,12 +53,12 @@ const BottomNavigation = () => {
       : '60px';
 
     const centerButtonSize = isExtraSmallScreen
-      ? '3.5rem'
+      ? '3rem'
       : isSmallScreen
-      ? '4rem'
+      ? '3rem'
       : isMediumScreen
-      ? '4.5rem'
-      : '5.5rem';
+      ? '4rem'
+      : '4rem';
 
     const iconSize = isExtraSmallScreen
       ? '1.25rem'
@@ -64,12 +66,11 @@ const BottomNavigation = () => {
       ? '1.5rem'
       : '1.75rem';
 
-    // Increased centerIconSize for a bigger icon
     const centerIconSize = isExtraSmallScreen
-      ? '3rem'    // Was 2.5rem, increased by 0.5rem
+      ? '3rem'
       : isSmallScreen
-      ? '3.5rem'  // Was 3rem, increased by 0.5rem
-      : '4rem';   // Was 3.5rem, increased by 0.5rem
+      ? '3.5rem'
+      : '4rem';
 
     const navHeight = isExtraSmallScreen
       ? '50px'
@@ -81,6 +82,35 @@ const BottomNavigation = () => {
 
     const padding = isExtraSmallScreen ? '0 5px' : isSmallScreen ? '0 8px' : '0 10px';
 
+    // Define pastel colors for each navigation item
+    const pastelColors = {
+      dashboard: {
+        default: '#C3E6CB', // Pastel green
+        active: '#A3D9B1',  // Slightly darker pastel green
+        hover: '#D4EFDF',   // Slightly lighter pastel green
+      },
+      tasks: {
+        default: '#D6BCFA', // Pastel purple
+        active: '#B794F4',  // Slightly darker pastel purple
+        hover: '#E2D6FA',   // Slightly lighter pastel purple
+      },
+      properties: {
+        default: '#F9C2D1', // Pastel pink (for Add button)
+        active: '#F4A1B8',  // Slightly darker pastel pink
+        hover: '#FBDCE5',   // Slightly lighter pastel pink
+      },
+      notifications: {
+        default: '#FEF9C3', // Pastel yellow
+        active: '#FEF08A',  // Slightly darker pastel yellow
+        hover: '#FEFCE8',   // Slightly lighter pastel yellow
+      },
+      users: {
+        default: '#FED7AA', // Pastel orange
+        active: '#FEC287',  // Slightly darker pastel orange
+        hover: '#FFE4C4',   // Slightly lighter pastel orange
+      },
+    };
+
     return {
       nav: {
         position: 'fixed',
@@ -88,11 +118,11 @@ const BottomNavigation = () => {
         left: 0,
         right: 0,
         height: navHeight,
-        backgroundColor: '#fff',
-        borderTop: '1px solid #e5e7eb',
+        backgroundColor: 'white', // Pastel blue background
+        borderTop: '1px solid #d1e0f5', // Slightly darker pastel blue for border
         zIndex: 1000,
-        width: '100%',
-        maxWidth: isLargeScreen ? '480px' : '100%',
+        width: '100vw',
+        maxWidth: isLargeScreen ? '480px' : '100vw',
         margin: isLargeScreen ? '0 auto' : 0,
       },
       container: {
@@ -104,6 +134,7 @@ const BottomNavigation = () => {
         padding: padding,
         position: 'relative',
         boxSizing: 'border-box',
+        borderRadius: '1em',
       },
       navItem: {
         display: 'flex',
@@ -112,14 +143,10 @@ const BottomNavigation = () => {
         justifyContent: 'center',
         width: sideButtonWidth,
         padding: isExtraSmallScreen ? '2px' : isSmallScreen ? '3px' : '4px',
-        color: '#666',
         transition: 'color 0.2s',
         background: 'none',
         border: 'none',
         cursor: 'pointer',
-      },
-      navItemActive: {
-        color: '#3b82f6',
       },
       navItemIcon: {
         fontSize: iconSize,
@@ -134,17 +161,18 @@ const BottomNavigation = () => {
       centerButton: {
         width: centerButtonSize,
         height: centerButtonSize,
-        backgroundColor: '#000000',
-        borderRadius: '12px', // Rounded square
+        backgroundColor: pastelColors.properties.default, // Pastel pink for Add button
+        borderRadius: '1em', // Rounded square
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         border: 'none',
         cursor: 'pointer',
+        transition: 'background-color 0.2s',
       },
       centerIcon: {
-        fontSize: centerIconSize, // Applies the larger size
+        fontSize: centerIconSize,
         color: '#fff',
       },
     };
@@ -158,10 +186,39 @@ const BottomNavigation = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Define pastel colors for dynamic use in JSX
+  const pastelColors = {
+    dashboard: {
+      default: 'black',
+      active: '#FFD107',
+      hover: '#D4EFDF',
+    },
+    tasks: {
+      default: 'black',
+      active: '#ADD8E6',
+      hover: '#E2D6FA',
+    },
+    properties: {
+      default: 'black',
+      active: '#F4A1B8',
+      hover: '#FBDCE5',
+    },
+    notifications: {
+      default: 'black',
+      active: '#F04770',
+      hover: '#FEFCE8',
+    },
+    users: {
+      default: 'black',
+      active: '#06D7A0',
+      hover: '#FFE4C4',
+    },
+  };
+
   return (
     <nav style={styles.nav}>
       <div style={styles.container}>
-        {/* Left Side Items */}
+        {/* Left Side Items: Dashboard, Calendar */}
         {leftItems.map((item) => {
           const config = navConfig[item];
           if (!config) return null;
@@ -172,26 +229,39 @@ const BottomNavigation = () => {
               key={item}
               style={{
                 ...styles.navItem,
-                ...(active ? styles.navItemActive : {}),
+                color: active ? pastelColors[item].active : pastelColors[item].default,
               }}
               onClick={() => handleNavigation(config.path)}
+              onMouseOver={(e) => !active && (e.currentTarget.style.color = pastelColors[item].hover)}
+              onMouseOut={(e) => !active && (e.currentTarget.style.color = pastelColors[item].default)}
             >
-              <span style={styles.navItemIcon}>{config.icon}</span>
-              <span style={styles.navItemLabel}>{config.label}</span>
+              <span style={{ ...styles.navItemIcon, color: active ? pastelColors[item].active : pastelColors[item].default }}>
+                {config.icon}
+              </span>
+              <span style={{ ...styles.navItemLabel, color: active ? pastelColors[item].active : pastelColors[item].default }}>
+                {config.label}
+              </span>
             </button>
           );
         })}
 
-        {/* Center Rounded Square Button with Bigger Icon */}
+        {/* Center "Add" Button */}
         <button
-          style={styles.centerButton}
+          style={{
+            ...styles.centerButton,
+            backgroundColor: isActive(navConfig.properties.path)
+              ? pastelColors.properties.active
+              : pastelColors.properties.default,
+          }}
           onClick={() => handleNavigation(navConfig.properties.path)}
+          onMouseOver={(e) => !isActive(navConfig.properties.path) && (e.currentTarget.style.backgroundColor = pastelColors.properties.hover)}
+          onMouseOut={(e) => !isActive(navConfig.properties.path) && (e.currentTarget.style.backgroundColor = pastelColors.properties.default)}
           aria-label="Add"
         >
           <span style={styles.centerIcon}>{navConfig.properties.icon}</span>
         </button>
 
-        {/* Right Side Items */}
+        {/* Right Side Items: Alerts, Menu */}
         {rightItems.map((item) => {
           const config = navConfig[item];
           if (!config) return null;
@@ -202,12 +272,18 @@ const BottomNavigation = () => {
               key={item}
               style={{
                 ...styles.navItem,
-                ...(active ? styles.navItemActive : {}),
+                color: active ? pastelColors[item].active : pastelColors[item].default,
               }}
               onClick={() => handleNavigation(config.path)}
+              onMouseOver={(e) => !active && (e.currentTarget.style.color = pastelColors[item].hover)}
+              onMouseOut={(e) => !active && (e.currentTarget.style.color = pastelColors[item].default)}
             >
-              <span style={styles.navItemIcon}>{config.icon}</span>
-              <span style={styles.navItemLabel}>{config.label}</span>
+              <span style={{ ...styles.navItemIcon, color: active ? pastelColors[item].active : pastelColors[item].default }}>
+                {config.icon}
+              </span>
+              <span style={{ ...styles.navItemLabel, color: active ? pastelColors[item].active : pastelColors[item].default }}>
+                {config.label}
+              </span>
             </button>
           );
         })}

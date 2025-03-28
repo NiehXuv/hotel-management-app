@@ -20,6 +20,16 @@ const Booking = () => {
 
   const navigate = useNavigate();
 
+  // Helper function to validate and parse date
+  const parseDate = (dateString) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      console.warn(`Invalid date string: ${dateString}`);
+      return null; // Return null for invalid dates
+    }
+    return date;
+  };
+
   // Fetch data when component mounts: Bookings -> Hotels -> Rooms
   useEffect(() => {
     const loadData = async () => {
@@ -33,16 +43,27 @@ const Booking = () => {
         });
         if (!bookingsResponse.ok) throw new Error(`HTTP error! status: ${bookingsResponse.status}`);
         const bookingsData = await bookingsResponse.json();
-        if (bookingsData) {
-          const bookingsArray = Object.keys(bookingsData).map(key => ({
+        if (bookingsData && bookingsData.bookings) {
+          const bookingsArray = Object.keys(bookingsData.bookings).map(key => ({
             id: key,
-            ...bookingsData[key],
+            ...bookingsData.bookings[key],
           }));
-          setBookings(bookingsArray);
-          console.log('Bookings:', bookingsArray); // Debug bookings
+
+          // Filter out bookings with invalid bookIn dates
+          const validBookings = bookingsArray.filter(booking => {
+            const date = parseDate(booking.bookIn);
+            if (!date) {
+              console.warn(`Filtered out booking with invalid bookIn date:`, booking);
+              return false;
+            }
+            return true;
+          });
+
+          setBookings(validBookings);
+          console.log('Valid Bookings:', validBookings); // Debug valid bookings
 
           // Step 2: Fetch hotels based on bookings
-          const hotelIds = [...new Set(bookingsArray.map(booking => booking.hotelId))];
+          const hotelIds = [...new Set(validBookings.map(booking => booking.hotelId))];
           if (hotelIds.length === 0) {
             setHotels([]);
             setRooms({});
@@ -205,7 +226,12 @@ const Booking = () => {
   // Memoized grouped bookings to prevent unnecessary re-computations
   const groupedBookings = useMemo(() => {
     return filteredBookings.reduce((acc, booking) => {
-      const date = new Date(booking.bookIn).toLocaleDateString('en-US', {
+      const dateObj = parseDate(booking.bookIn);
+      if (!dateObj) {
+        console.warn(`Skipping booking with invalid bookIn date:`, booking);
+        return acc; // Skip bookings with invalid dates
+      }
+      const date = dateObj.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -226,7 +252,7 @@ const Booking = () => {
     });
   }, [groupedBookings]);
 
-  // Updated Styles to match Calendar page
+  // Styles (unchanged)
   const styles = {
     container: {
       margin: 'auto',
@@ -403,10 +429,9 @@ const Booking = () => {
 
   return (
     <div style={styles.container}>
-
       {/* Filter Section in Card */}
       {!loading && (
-        <Card style={{borderRadius:'1.8em', padding:'auto'}}>
+        <Card style={{ borderRadius: '1.8em', padding: 'auto' }}>
           <details>
             <summary style={{ cursor: 'pointer', fontSize: '1.1rem', listStyle: 'none' }}>
               Filter Bookings

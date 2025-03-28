@@ -31,28 +31,6 @@ export const rolePermissions = {
     dashboardAccess: ['statistics', 'tasks', 'properties', 'staff'],
     navigationItems: ['dashboard', 'tasks', 'properties', 'notifications', 'reports']
   },
-  host: {
-    canCreateTasks: false,
-    canAssignRoles: false,
-    canViewReports: false,
-    canManageProperties: true,
-    canManageUsers: false,
-    canApproveExpenses: false,
-    canManageSettings: false,
-    dashboardAccess: ['tasks', 'properties'],
-    navigationItems: ['dashboard', 'tasks', 'properties', 'notifications']
-  },
-  cleaner: {
-    canCreateTasks: false,
-    canAssignRoles: false,
-    canViewReports: false,
-    canManageProperties: false,
-    canManageUsers: false,
-    canApproveExpenses: false,
-    canManageSettings: false,
-    dashboardAccess: ['tasks'],
-    navigationItems: ['dashboard', 'tasks', 'notifications']
-  },
   receptionist: {
     canCreateTasks: false,
     canAssignRoles: false,
@@ -73,17 +51,6 @@ export const rolePermissions = {
     canApproveExpenses: false,
     canManageSettings: false,
     dashboardAccess: ['statistics', 'finances'],
-    navigationItems: ['dashboard', 'reports', 'notifications']
-  },
-  accountant: {
-    canCreateTasks: false,
-    canAssignRoles: false,
-    canViewReports: true,
-    canManageProperties: false,
-    canManageUsers: false,
-    canApproveExpenses: true,
-    canManageSettings: false,
-    dashboardAccess: ['finances'],
     navigationItems: ['dashboard', 'reports', 'notifications']
   },
   // Default permissions for unknown roles
@@ -151,7 +118,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid password');
       }
   
-      const userRole = foundUser.role || 'Boss';
+      const userRole = foundUser.role || 'boss';
       const userRoleLower = userRole.toLowerCase(); // Normalize role to lowercase
   
       const userWithPermissions = {
@@ -199,11 +166,8 @@ export const AuthProvider = ({ children }) => {
     const roleMap = {
       boss: '👨‍💼',
       manager: '👩‍💼',
-      host: '🧑‍💼',
-      cleaner: '🧹',
       receptionist: '💁‍♀️',
-      sales: '📊',
-      accountant: '🧮'
+      sales: '📊'
     };
     return roleMap[role] || '👤';
   };

@@ -10,7 +10,6 @@ const BossManagerDashboard = ({ statistics }) => {
   const styles = {
     pageContainer: {
       paddingBottom: '2em',
-      padding: '0.2em',
       width: '100%',
       maxWidth: '480px',
       marginBottom: '4em',
@@ -64,16 +63,17 @@ const BossManagerDashboard = ({ statistics }) => {
       flex: 1,
     },
     button: {
+      width: '12em',
       margin: '0.4em auto',
-    display: 'block',
-    padding: '0.2em 0.8em',
-    backgroundColor: '#FFD167',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '2em',
-    fontSize: '16px',
-    cursor: 'pointer',
-    textAlign: 'center',
+      display: 'block',
+      padding: '0.2em 0.8em',
+      backgroundColor: '#FFD167',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '2em',
+      fontSize: '1em',
+      cursor: 'pointer',
+      textAlign: 'center',
     },
   };
 
@@ -118,7 +118,7 @@ const BossManagerDashboard = ({ statistics }) => {
         </Card>
         
         <Card style={styles.metricCard}>
-          <h3 style={styles.metricTitle}>Pending Tasks</h3>
+          <h3 style={styles.metricTitle}>Pending Issue</h3>
           <p style={styles.metricValue}>{statistics.pendingTasks}</p>
           <p style={styles.metricSubtext}>
             {statistics.criticalTasks} critical
@@ -157,8 +157,9 @@ const BossManagerDashboard = ({ statistics }) => {
             <p style={styles.metricValue}>${statistics.monthlyRevenue.toLocaleString()}</p>
           </div>
           <div style={styles.flexItem}>
-            <h3 style={styles.metricTitle}>Pending Invoices</h3>
-            <p style={styles.metricValue}>{statistics.pendingInvoices}</p>
+            <h3 style={styles.metricTitle}>Top Property</h3>
+            <p style={styles.metricValue}>{statistics.topProperty.name}</p>
+            <p style={styles.metricSubtext}>${statistics.topProperty.revenue.toLocaleString()}</p>
           </div>
         </div>
         <Button 
@@ -169,6 +170,7 @@ const BossManagerDashboard = ({ statistics }) => {
           View Reports
         </Button>
       </Card>
+      
 
       {/* Staff Section - Commented out but styled for consistency */}
       {/* <Card style={styles.card}>
@@ -230,7 +232,7 @@ const BossManagerDashboard = ({ statistics }) => {
               <h3 style={styles.metricTitle}>Reception</h3>
               <p style={styles.metricSubtext}>5 active</p>
             </div>
-          </divcountries>
+          </div>
         </div>
         <Button 
           variant="outline" 

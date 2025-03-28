@@ -13,7 +13,8 @@ const Calendar = () => {
   const [selectedHotel, setSelectedHotel] = useState('');
   const [loadingHotels, setLoadingHotels] = useState(false);
   const [error, setError] = useState('');
-  const [rooms, setRooms] = useState([]); // This will now store rooms for all hotels
+  const [allRooms, setAllRooms] = useState([]); // Store all rooms
+  const [rooms, setRooms] = useState([]); // Filtered rooms
   const [selectedRoom, setSelectedRoom] = useState('');
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [roomError, setRoomError] = useState('');
@@ -34,15 +35,15 @@ const Calendar = () => {
     }
   }, [hotels]);
 
-  // Fetch rooms when a hotel is selected for filtering
+  // Filter rooms when a hotel is selected
   useEffect(() => {
     if (selectedHotel) {
-      const filteredRooms = rooms.filter(room => room.hotelId === selectedHotel);
+      const filteredRooms = allRooms.filter(room => room.hotelId === selectedHotel);
       setRooms(filteredRooms);
     } else {
-      fetchAllRooms(); // Reset to all rooms if no hotel is selected
+      setRooms(allRooms); // Reset to all rooms if no hotel is selected
     }
-  }, [selectedHotel]);
+  }, [selectedHotel, allRooms]);
 
   const fetchBookings = async () => {
     try {
@@ -52,7 +53,15 @@ const Calendar = () => {
       });
       if (!response.ok) throw new Error('Failed to fetch bookings');
       const data = await response.json();
-      setBookings(Array.isArray(data) ? data : Object.values(data));
+      // Extract bookings and add id to each booking object
+      const bookingsData = data.bookings
+        ? Object.entries(data.bookings).map(([id, booking]) => ({
+            ...booking,
+            id,
+          }))
+        : [];
+      setBookings(bookingsData);
+      console.log('Fetched bookings:', bookingsData);
     } catch (err) {
       setError(`Error fetching bookings: ${err.message}`);
       console.error('Fetch bookings error:', err);
@@ -86,7 +95,7 @@ const Calendar = () => {
     setLoadingRooms(true);
     setRoomError('');
     try {
-      const allRooms = [];
+      const allRoomsData = [];
       for (const hotel of hotels) {
         const response = await fetch(`http://localhost:5000/api/hotels/${hotel.id}/rooms`, {
           method: 'GET',
@@ -94,17 +103,18 @@ const Calendar = () => {
         });
         const data = await response.json();
         if (data.success) {
-          // Add hotelId to each room for mapping
           const roomsWithHotelId = data.data.map(room => ({
             ...room,
             hotelId: hotel.id,
           }));
-          allRooms.push(...roomsWithHotelId);
+          allRoomsData.push(...roomsWithHotelId);
         } else {
           setRoomError(`Failed to load rooms for hotel ${hotel.id}: ${data.error || 'Unknown error'}`);
         }
       }
-      setRooms(allRooms);
+      setAllRooms(allRoomsData);
+      setRooms(allRoomsData);
+      console.log('Fetched rooms:', allRoomsData);
     } catch (err) {
       setRoomError(`Network error: ${err.message}`);
       console.error('Fetch rooms error:', err);
@@ -120,10 +130,9 @@ const Calendar = () => {
     }, {});
   }, [hotels]);
 
-  // Map roomId to RoomName, considering hotelId
   const roomMap = useMemo(() => {
     return rooms.reduce((map, room) => {
-      const key = `${room.hotelId}-${room.id}`; // Unique key for hotelId-roomId pair
+      const key = `${room.hotelId}-${room.id}`;
       map[key] = room.RoomName;
       return map;
     }, {});
@@ -138,10 +147,19 @@ const Calendar = () => {
 
   const getBookingsForDate = (date) => {
     return bookings.filter((booking) => {
-      const bookingDate = new Date(booking.bookIn).toDateString();
-      const dateMatch = bookingDate === date.toDateString();
+      if (!booking.bookIn) {
+        console.warn(`Booking ${booking.id} has no bookIn date`);
+        return false;
+      }
+      const bookingDate = new Date(booking.bookIn);
+      if (isNaN(bookingDate)) {
+        console.warn(`Booking ${booking.id} has invalid bookIn date: ${booking.bookIn}`);
+        return false;
+      }
+      const dateMatch = bookingDate.toDateString() === date.toDateString();
       const hotelMatch = selectedHotel ? booking.hotelId === selectedHotel : true;
       const roomMatch = selectedRoom ? booking.roomId === selectedRoom : true;
+      console.log(`Checking booking ${booking.id}: bookIn=${booking.bookIn}, dateMatch=${dateMatch}, hotelMatch=${hotelMatch}, roomMatch=${roomMatch}`);
       return dateMatch && hotelMatch && roomMatch;
     });
   };
@@ -168,13 +186,20 @@ const Calendar = () => {
     return days;
   };
 
-  // Generate time slots with bookings only
   const generateBookedTimeSlots = () => {
     const bookedSlots = getBookingsForDate(currentDate).map((booking) => {
+      if (!booking.eta || !booking.eta.includes(':')) {
+        console.warn(`Booking ${booking.id} has invalid eta: ${booking.eta}`);
+        return null;
+      }
       const startTime = booking.eta;
       const [hourStr, minuteStr] = startTime.split(':');
       const startHour = parseInt(hourStr, 10);
       const startMinute = parseInt(minuteStr, 10);
+      if (isNaN(startHour) || isNaN(startMinute)) {
+        console.warn(`Booking ${booking.id} has invalid eta format: ${booking.eta}`);
+        return null;
+      }
       const startTotalMinutes = startHour * 60 + startMinute;
       const color =
         booking.paymentStatus === 'Paid'
@@ -193,9 +218,10 @@ const Calendar = () => {
         time,
         color,
       };
-    });
+    }).filter(slot => slot !== null); // Remove invalid slots
 
-    // Group bookings by time slot (hour) and sort by ETA
+    console.log('Booked slots:', bookedSlots);
+
     const timeSlotMap = bookedSlots.reduce((map, slot) => {
       const { time } = slot;
       if (!map[time]) {
@@ -205,12 +231,10 @@ const Calendar = () => {
       return map;
     }, {});
 
-    // Sort bookings within each time slot by ETA (startTotalMinutes)
     Object.keys(timeSlotMap).forEach((time) => {
       timeSlotMap[time].sort((a, b) => a.startTotalMinutes - b.startTotalMinutes);
     });
 
-    // Return unique time slots with their sorted bookings
     return { timeSlotMap, bookedTimes: Object.keys(timeSlotMap).sort() };
   };
 
@@ -244,7 +268,6 @@ const Calendar = () => {
 
   const formattedMonth = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-  // Get booked time slots
   const { timeSlotMap, bookedTimes } = generateBookedTimeSlots();
 
   return (
@@ -293,7 +316,7 @@ const Calendar = () => {
         </div>
       </Card>
 
-      <Card>
+      <Card style={{ borderRadius: '2em' }}>
         <details>
           <summary style={{ cursor: 'pointer', fontSize: '1.1rem', listStyle: 'none', marginBottom: '2%' }}>
             Filter Booking
@@ -307,7 +330,7 @@ const Calendar = () => {
               value={selectedHotel}
               onChange={(e) => setSelectedHotel(e.target.value)}
               disabled={loadingHotels}
-              style={styles.hotelSelect}
+              style={{ borderRadius: '2em' }}
             >
               <option value="">All Hotels</option>
               {hotels
@@ -330,7 +353,7 @@ const Calendar = () => {
               value={selectedRoom}
               onChange={(e) => setSelectedRoom(e.target.value)}
               disabled={!selectedHotel || loadingRooms}
-              style={styles.hotelSelect}
+              style={{ borderRadius: '2em' }}
             >
               <option value="">All Rooms</option>
               {rooms
@@ -351,40 +374,39 @@ const Calendar = () => {
         <p style={styles.noBooking}>No bookings for this day.</p>
       )}
 
-<Card className="schedule-view-card" style={styles.scheduleCard}>
-  <div style={styles.schedule}>
-    {bookedTimes.map((time, index) => {
-      const slotsInHour = timeSlotMap[time];
-      return (
-        <React.Fragment key={index}>
-          <div style={styles.timeSlotContainer}>
-            <span style={styles.timeLabel}>{time}</span>
-            <div style={styles.timeSlotWrapper}>
-              {slotsInHour.map((slot) => (
-                <div
-                  key={slot.id}
-                  style={{
-                    ...styles.bookingCard,
-                    backgroundColor: slot.color,
-                  }}
-                  onClick={() => handleTimeSlotClick(slot.booking)}
-                >
-                  <div>{getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}</div>
-                  <div>{slot.booking.customerId}</div>
+      <Card className="schedule-view-card" style={styles.scheduleCard}>
+        <div style={styles.schedule}>
+          {bookedTimes.map((time, index) => {
+            const slotsInHour = timeSlotMap[time];
+            return (
+              <React.Fragment key={index}>
+                <div style={styles.timeSlotContainer}>
+                  <span style={styles.timeLabel}>{time}</span>
+                  <div style={styles.timeSlotWrapper}>
+                    {slotsInHour.map((slot) => (
+                      <div
+                        key={slot.id}
+                        style={{
+                          ...styles.bookingCard,
+                          backgroundColor: slot.color,
+                        }}
+                        onClick={() => handleTimeSlotClick(slot.booking)}
+                      >
+                        <div>{getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}</div>
+                        <div>{slot.booking.customerId}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-          {/* Add separator line */}
-          {index < bookedTimes.length - 1 && <div style={styles.separator}></div>}
-        </React.Fragment>
-      );
-    })}
-  </div>
-  <button style={styles.allBooking} onClick={() => navigate('/booking')}>
-    All Booking
-  </button>
-</Card>
+                {index < bookedTimes.length - 1 && <div style={styles.separator}></div>}
+              </React.Fragment>
+            );
+          })}
+        </div>
+        <button style={styles.allBooking} onClick={() => navigate('/booking')}>
+          All Booking
+        </button>
+      </Card>
 
       {showModal && (
         <div style={styles.modal}>
@@ -453,7 +475,7 @@ const styles = {
     margin: 0,
   },
   dayCard: {
-    borderRadius: '10px',
+    borderRadius: '2em',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
   daySelectorContainer: {
@@ -474,7 +496,7 @@ const styles = {
     width: '45px',
     textAlign: 'center',
     margin: 'auto',
-    borderRadius: '50%',
+    borderRadius: '2em',
     cursor: 'pointer',
     backgroundColor: '#fff',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -500,7 +522,7 @@ const styles = {
     width: '100%',
     margin: 'auto',
     padding: '10px',
-    borderRadius: '10px',
+    borderRadius: '2em',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
   schedule: {
@@ -568,7 +590,7 @@ const styles = {
     width: '20em',
     padding: '20px',
     backgroundColor: '#fff',
-    borderRadius: '10px',
+    borderRadius: '2em',
     boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
   },
   closeButton: {
@@ -602,17 +624,24 @@ const styles = {
     cursor: 'pointer',
     textAlign: 'center',
   },
-  separator: {
-    height: '1px',
-    backgroundColor: '#ccc',
-    margin: '1em 0',
-    width: '100%',
-  },
   filterContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem', // Adjust the spacing between elements
+    gap: '1rem',
     marginBottom: '1rem',
+    borderRadius: '2em',
+  },
+  label: {
+    fontSize: '1rem',
+    marginBottom: '0.5rem',
+  },
+  loadingText: {
+    fontSize: '0.9rem',
+    color: '#666',
+  },
+  errorText: {
+    fontSize: '0.9rem',
+    color: '#dc2626',
   },
 };
 

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../common/Card';
 import Button from '../common/Button';
-import Input from '../common/Input';
 import { StatusBadge } from '../common/Badge';
+import { FaCalendarWeek } from 'react-icons/fa';
 
 /**
  * Receptionist Dashboard Component
@@ -16,240 +16,275 @@ import { StatusBadge } from '../common/Badge';
  */
 const ReceptionistDashboard = ({ statistics }) => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [hotelId, setHotelId] = useState(1); // Default hotel ID
+  const [hotelData, setHotelData] = useState({
+    name: '',
+    totalRooms: 0,
+    occupiedRooms: 0,
+    availableRooms: 0,
+  });
+
+  // Styles matching BossManagerDashboard
+  const styles = {
+    pageContainer: {
+      paddingBottom: '2em',
+      width: '100%',
+      maxWidth: '480px',
+      marginBottom: '4em',
+    },
+    gridContainer: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '12px',
+      marginBottom: '16px',
+    },
+    card: {
+      marginBottom: '16px',
+      padding: '16px',
+      backgroundColor: 'white',
+      borderRadius: '2em',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    },
+    metricCard: {
+      backgroundColor: 'white',
+      borderRadius: '1em',
+      padding: '16px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+    },
+    metricTitle: {
+      fontSize: '1em',
+      fontWeight: '600',
+      color: '#666',
+      marginBottom: '8px',
+    },
+    metricValue: {
+      fontSize: '1.6em',
+      fontWeight: '700',
+      color: '#111827',
+      marginBottom: '4px',
+    },
+    metricSubtext: {
+      fontSize: '12px',
+      color: '#999',
+    },
+    sectionTitle: {
+      fontSize: '18px',
+      fontWeight: '600',
+      marginBottom: '12px',
+    },
+    flexContainer: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      marginBottom: '12px',
+    },
+    flexItem: {
+      flex: 1,
+      textAlign: 'center',
+    },
+    button: {
+      margin: '0.4em auto',
+      display: 'block',
+      padding: '0.2em 0.8em',
+      backgroundColor: '#FFD167',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '2em',
+      fontSize: '16px',
+      cursor: 'pointer',
+      textAlign: 'center',
+    },
+    bookingItem: {
+      padding: '12px 0',
+      borderBottom: '1px solid #f0f0f0',
+    },
+    bookingHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: '8px',
+    },
+    bookingGuest: {
+      fontSize: '16px',
+      fontWeight: '500',
+      color: '#111827',
+    },
+    bookingDetails: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    bookingInfo: {
+      fontSize: '14px',
+      color: '#666',
+    },
+  };
+
+  // Fetch hotel-specific data when hotelId changes
+  useEffect(() => {
+    const fetchHotelData = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/hotels/${hotelId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch hotel data');
+        }
+        const json = await response.json();
+
+        if (json.success) {
+          setHotelData({
+            name: json.data.name,
+            totalRooms: json.data.roomStatistics.totalRooms,
+            occupiedRooms: json.data.roomStatistics.occupiedRooms,
+            availableRooms: json.data.roomStatistics.availableRooms,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching hotel data:', error);
+      }
+    };
+
+    fetchHotelData();
+  }, [hotelId]);
+
   // Navigation handlers
-  const handleViewProperties = () => navigate('/properties');
-  
-  /**
-   * Mock room and booking data with structured hierarchy
-   * - Properties contain rooms
-   * - Each room has status and guest information when occupied
-   */
-  const bookingData = {
-    todayArrivals: 8,
-    todayDepartures: 6,
-    pendingCheckIns: 5,
-    pendingCheckOuts: 3,
-    
-    // Active property in focus (would be selected in real app)
-    activeProperty: {
-      id: 1,
-      name: 'Sunrise Hotel',
-      totalRooms: 24,
-      occupiedRooms: 18,
-      availableRooms: 6,
-      
-      // Recent bookings
-      recentBookings: [
-        { id: 1, guest: 'John Smith', roomNumber: '304', checkIn: '2025-03-02', checkOut: '2025-03-05', status: 'pending' },
-        { id: 2, guest: 'Emily Johnson', roomNumber: '212', checkIn: '2025-03-01', checkOut: '2025-03-04', status: 'active' },
-        { id: 3, guest: 'Michael Brown', roomNumber: '118', checkIn: '2025-03-01', checkOut: '2025-03-03', status: 'active' },
-        { id: 4, guest: 'Sarah Garcia', roomNumber: '401', checkIn: '2025-02-28', checkOut: '2025-03-02', status: 'checkout' },
-      ],
-      
-      // Room status by floor/category 
-      roomsByFloor: [
-        { floor: '1st Floor', total: 8, occupied: 5, available: 3 },
-        { floor: '2nd Floor', total: 8, occupied: 7, available: 1 },
-        { floor: '3rd Floor', total: 8, occupied: 6, available: 2 },
-      ]
-    }
-  };
-  
-  /**
-   * Handles search input changes
-   * @param {Event} e - Input change event
-   */
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
-  
-  /**
-   * Search functionality for guest bookings
-   * @returns {Array} Filtered booking results
-   */
-  const getFilteredBookings = () => {
-    if (!searchTerm.trim()) {
-      return bookingData.activeProperty.recentBookings;
-    }
-    
-    const lowerCaseSearch = searchTerm.toLowerCase();
-    return bookingData.activeProperty.recentBookings.filter(booking => 
-      booking.guest.toLowerCase().includes(lowerCaseSearch) || 
-      booking.roomNumber.includes(lowerCaseSearch)
-    );
-  };
-  
-  // Get filtered booking results
-  const filteredBookings = getFilteredBookings();
-  
-  /**
-   * Formats date string to more readable format
-   * @param {string} dateString - ISO date string
-   * @returns {string} Formatted date
-   */
+  const handleViewBooking = () => navigate('/booking');
+  const handleViewCalendar = () => navigate('/calendar');
+  const handleChangeHotel = () => navigate('/properties');
+  const handleViewRoom = () => navigate('/properties/1/rooms');
+
+  // Map the recent bookings to the expected fields and take the last 4
+  const recentFourBookings = statistics.recentBookings
+    .map(booking => ({
+      id: booking.customerId + booking.bookIn,
+      guest: booking.customerId,
+      roomNumber: booking.roomId,
+      checkIn: booking.bookIn,
+      checkOut: booking.bookOut,
+      status: booking.bookingStatus ? booking.bookingStatus.toLowerCase() : 'unknown',
+    }))
+    .slice(-4);
+
+  // Format date helper
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
-  
+
   return (
-    <div className="mb-6">
-      {/* Search Section */}
-      <Card className="mb-6">
-        <Input
-          placeholder="Search by guest name or room number"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          startIcon={<span>🔍</span>}
-          className="mb-0"
-        />
-      </Card>
-      
+    <div style={styles.pageContainer}>
+      {/* Action Buttons */}
+      <div style={styles.gridContainer}>
+        <Button
+          variant="outline"
+          onClick={handleViewCalendar}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <FaCalendarWeek style={{ marginRight: '8px' }} />
+          View Calendar
+        </Button>
+      </div>
+
       {/* Today's Statistics */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <Card className="bg-primary-color/10 border-l-4 border-primary-color">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-sm font-semibold text-neutral-600">Check-ins Today</h3>
-              <p className="text-2xl font-bold text-primary-color">{bookingData.todayArrivals}</p>
-            </div>
-            <span className="text-2xl">🛎️</span>
-          </div>
-          <p className="text-xs text-neutral-500 mt-1">
-            {bookingData.pendingCheckIns} pending
-          </p>
+      <div style={styles.gridContainer}>
+        <Card style={styles.metricCard}>
+          <h3 style={styles.metricTitle}>Check-ins Today</h3>
+          <p style={styles.metricValue}>{statistics.checkinsToday}</p>
+          <p style={styles.metricSubtext}>🛎️</p>
         </Card>
-        
-        <Card className="bg-secondary-color/10 border-l-4 border-secondary-color">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="text-sm font-semibold text-neutral-600">Check-outs Today</h3>
-              <p className="text-2xl font-bold text-secondary-color">{bookingData.todayDepartures}</p>
-            </div>
-            <span className="text-2xl">🔑</span>
-          </div>
-          <p className="text-xs text-neutral-500 mt-1">
-            {bookingData.pendingCheckOuts} pending
-          </p>
+
+        <Card style={styles.metricCard}>
+          <h3 style={styles.metricTitle}>Check-outs Today</h3>
+          <p style={styles.metricValue}>{statistics.checkoutsToday}</p>
+          <p style={styles.metricSubtext}>🔑</p>
         </Card>
       </div>
-      
+
       {/* Room Status */}
-      <Card
-        header={
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">{bookingData.activeProperty.name}</h2>
-            <Button 
-              variant="text" 
-              size="sm"
-              onClick={handleViewProperties}
-            >
-              Change
-            </Button>
+      <Card style={styles.card}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={styles.sectionTitle}>{hotelData.name || `Hotel ${hotelId}`}</h2>
+        </div>
+        <div style={styles.flexContainer}>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Total Rooms</h3>
+            <p style={styles.metricValue}>{hotelData.totalRooms}</p>
           </div>
-        }
-        className="mb-6"
-      >
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-center px-2">
-            <p className="text-xl font-semibold">{bookingData.activeProperty.totalRooms}</p>
-            <p className="text-xs text-neutral-600">Total Rooms</p>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Available</h3>
+            <p style={styles.metricValue}>{hotelData.availableRooms}</p>
           </div>
-          
-          <div className="text-center px-2 border-l border-r border-neutral-200">
-            <p className="text-xl font-semibold text-success-color">{bookingData.activeProperty.availableRooms}</p>
-            <p className="text-xs text-neutral-600">Available</p>
-          </div>
-          
-          <div className="text-center px-2">
-            <p className="text-xl font-semibold text-primary-color">{bookingData.activeProperty.occupiedRooms}</p>
-            <p className="text-xs text-neutral-600">Occupied</p>
+          <div style={styles.flexItem}>
+            <h3 style={styles.metricTitle}>Occupied</h3>
+            <p style={styles.metricValue}>{hotelData.occupiedRooms}</p>
           </div>
         </div>
-        
-        {/* Room status by floor */}
-        <div className="border-t border-neutral-200 pt-3">
-          <h3 className="text-sm font-medium mb-2">Room Status by Floor</h3>
-          
-          {bookingData.activeProperty.roomsByFloor.map((floor, index) => (
-            <div 
-              key={index} 
-              className="flex justify-between items-center mb-2 last:mb-0"
-            >
-              <span className="text-sm">{floor.floor}</span>
-              <div className="flex-1 mx-3">
-                <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-primary-color" 
-                    style={{ width: `${(floor.occupied / floor.total) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-              <span className="text-xs text-neutral-600">
-                {floor.occupied}/{floor.total}
-              </span>
-            </div>
-          ))}
-        </div>
-        
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleViewProperties}
-          className="mt-3"
-          fullWidth
+        <Button
+          variant="outline"
+          onClick={handleViewRoom}
+          style={styles.button}
         >
           View All Rooms
         </Button>
       </Card>
-      
+
       {/* Recent Bookings */}
-      <Card
-        header={<h2 className="text-lg font-semibold">Recent Bookings</h2>}
-      >
-        {filteredBookings.length > 0 ? (
+      <Card style={styles.card}>
+        <h2 style={styles.sectionTitle}>Recent Bookings</h2>
+        {recentFourBookings.length > 0 ? (
           <div>
-            {filteredBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="py-3 border-b border-neutral-100 last:border-0"
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-medium">{booking.guest}</h3>
+            {recentFourBookings.map((booking) => (
+              <div key={booking.id} style={styles.bookingItem}>
+                <div style={styles.bookingHeader}>
+                  <h3 style={styles.bookingGuest}>{booking.guest}</h3>
                   <StatusBadge status={booking.status} />
                 </div>
-                
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <span className="text-sm mr-2">Room {booking.roomNumber}</span>
-                    <span className="text-xs text-neutral-500">
+                <div style={styles.bookingDetails}>
+                  <div>
+                    <span style={styles.bookingInfo}>Room {booking.roomNumber}</span>
+                    <span style={{ ...styles.bookingInfo, marginLeft: '8px' }}>
                       {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
                     </span>
                   </div>
-                  
                   <div>
                     {booking.status === 'pending' && (
-                      <Button variant="success" size="sm">Check In</Button>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        style={{ padding: '4px 12px', fontSize: '14px' }}
+                      >
+                        Check In
+                      </Button>
                     )}
-                    {booking.status === 'checkout' && (
-                      <Button variant="secondary" size="sm">Check Out</Button>
-                    )}
+                    {booking.status === 'confirmed' &&
+                      new Date(booking.checkOut).toDateString() === new Date().toDateString() && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          style={{ padding: '4px 12px', fontSize: '14px' }}
+                        >
+                          Check Out
+                        </Button>
+                      )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-center py-4 text-neutral-500">
-            {searchTerm ? 'No bookings match your search' : 'No recent bookings'}
+          <p style={{ textAlign: 'center', color: '#999', padding: '16px 0' }}>
+            No recent bookings
           </p>
         )}
-        
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <Button variant="primary">New Booking</Button>
-          <Button variant="outline" onClick={handleViewProperties}>All Bookings</Button>
+        <div style={{ ...styles.gridContainer, marginTop: '16px' }}>
+          <Button variant="primary" style={styles.button}>
+            New Booking
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleViewBooking}
+            style={styles.button}
+          >
+            All Bookings
+          </Button>
         </div>
       </Card>
     </div>
