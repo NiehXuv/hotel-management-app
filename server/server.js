@@ -50,7 +50,7 @@ const { clearAllNotifications } = require('./components/Notification/deleteNotif
 // Staff
 const { listStaff } = require('./components/Staff/listStaff.js');
 const { financialReport } = require("./components/Reports/financialReport");
-
+const { createAccount } = require('./components/Account/createAccount');
 
 const app = express();
 app.use(express.json());
@@ -63,7 +63,7 @@ app.get('/booking/list', listAllBookings);
 app.post('/booking/create', createBooking);
 app.put('/booking/:bookingId', updateBooking);
 app.delete('/booking/:bookingId', removeBooking);
-
+app.post('/account', createAccount);
 // Room routes
 app.get('/api/hotels/ids', getHotelIds);
 app.get('/api/hotel/:hotelId/roomTypes', getRoomTypes);

@@ -118,7 +118,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid password');
       }
   
-      const userRole = foundUser.role || 'boss';
+      const userRole = foundUser.role
       const userRoleLower = userRole.toLowerCase(); // Normalize role to lowercase
   
       const userWithPermissions = {
