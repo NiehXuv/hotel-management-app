@@ -1,42 +1,19 @@
-// backend/createProperty.js
 const { database } = require("../config/firebaseconfig");
 const { ref, set, get, runTransaction } = require("firebase/database");
 
 const createProperty = async (req, res) => {
-    try {
-        const { name, description, location, email, phoneNumber, roomTypes } = req.body;
+    try{
+        const{name, description, location, email, phoneNumber} = req.body;
 
-        // Log the incoming request body
-        console.log("Request body:", req.body);
-
-        // Validation
         if (!name || !description || !location || !email || !phoneNumber) {
             return res.status(400).json({ 
                 success: false,
-                error: 'All fields (name, description, location, email, phoneNumber) are required' 
-            });
+                error: 'All fields are required' });
         }
-
-        if (!roomTypes || !Array.isArray(roomTypes) || roomTypes.length === 0) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'At least one RoomType is required' 
-            });
-        }
-        
         if (name.trim().length < 2) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Name must be at least 2 characters' 
-            });
-        }
-
-        // Validate roomTypes
-        const validRoomTypes = roomTypes.filter(type => typeof type === 'string' && type.trim() !== '');
-        if (validRoomTypes.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'At least one valid RoomType is required'
             });
         }
 
@@ -51,13 +28,20 @@ const createProperty = async (req, res) => {
         
                 if (
                     hotel &&
-                    hotel.Name && hotel.Location &&
-                    hotel.Name.trim().toLowerCase() === name.trim().toLowerCase() &&
-                    hotel.Location.trim().toLowerCase() === location.trim().toLowerCase()
+                    hotel.name && hotel.location && // Ensure properties exist
+                    hotel.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+                    hotel.location.trim().toLowerCase() === location.trim().toLowerCase()
                 ) {
-                    return res.status(400).json({ 
-                        success: false, 
-                        error: "Hotel with the same name and location already exists." 
+                    return res.status(400).json({ success: false, error: "Hotel with the same name and location already exists." });
+                }
+                if (
+                    hotel &&
+                    hotel.Location &&
+                    hotel.Location.trim().toLowerCase() === location.trim().toLowerCase()
+                ){
+                    return res.status(400).json({
+                        success:false,
+                        error: "Hotel with the same location already exists"
                     });
                 }
             }
@@ -69,20 +53,29 @@ const createProperty = async (req, res) => {
         }
 
         const hotelRef = ref(database, `Hotel/${newHotelId}`);
-        const hotelData = {
+        await set(hotelRef, {
             Name: name,
             Description: description,
             Location: location,
             Email: email,
             PhoneNumber: phoneNumber,
-            RoomTypes: validRoomTypes // Explicitly include RoomTypes
+<<<<<<< HEAD
         };
 
         // Log the data before saving
         console.log("Data to be saved to Firebase:", hotelData);
 
-        // Save to Firebase
+        // Save hotel data to Firebase
         await set(hotelRef, hotelData);
+
+        // Save RoomTypes to Firebase
+        const roomTypesRef = ref(database, `Hotel/${newHotelId}/RoomType`);
+        const roomTypeData = {};
+        validRoomTypes.forEach(type => {
+            roomTypeData[type] = true;
+        });
+
+        await set(roomTypesRef, roomTypeData);
 
         // Verify the data was saved by reading it back
         const savedSnapshot = await get(hotelRef);
@@ -91,16 +84,20 @@ const createProperty = async (req, res) => {
         } else {
             console.log("No data found at path after save:", `Hotel/${newHotelId}`);
         }
+=======
+        });
+>>>>>>> parent of a2cd3cb (added Roomtype)
 
         return res.status(201).json({
             success: true,
-            data: { hotelId: newHotelId, name, roomTypes: validRoomTypes },
+            data: { hotelId: newHotelId, name },
             message: "Hotel created successfully"
         });
-    } catch (error) {
+    }
+    catch(error){
         console.error("Error creating hotel:", error.message);
         return res.status(500).json({ success: false, error: "Internal Server Error" });
     }
-};
+}
 
-module.exports = { createProperty };
+module.exports = { createProperty};
