@@ -15,7 +15,7 @@ const createProperty = async (req, res) => {
 
         console.log("Request body:", req.body);
 
-        // Validation
+        // Validation for basic fields
         if (!name || !description || !location || !email || !phoneNumber) {
             return res.status(400).json({ 
                 success: false,
@@ -23,34 +23,10 @@ const createProperty = async (req, res) => {
             });
         }
 
-        if (!roomTypes || !Array.isArray(roomTypes) || roomTypes.length === 0) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'At least one room type is required' 
-            });
-        }
-
         if (name.trim().length < 2) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Name must be at least 2 characters' 
-            });
-        }
-
-        // Updated roomTypes validation with price fields
-        const validRoomTypes = roomTypes.filter(room => 
-            room && 
-            typeof room.Type === 'string' && 
-            room.Type.trim() !== '' &&
-            typeof room.PriceByHour === 'number' && room.PriceByHour >= 0 &&
-            typeof room.PriceBySection === 'number' && room.PriceBySection >= 0 &&
-            typeof room.PriceByNight === 'number' && room.PriceByNight >= 0
-        );
-
-        if (validRoomTypes.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'At least one valid room type with Type and pricing (PriceByHour, PriceBySection, PriceByNight) is required'
             });
         }
 
@@ -92,33 +68,27 @@ const createProperty = async (req, res) => {
 
         const hotelRef = ref(database, `Hotel/${newHotelId}`);
 
-        // Prepare hotel data
+        // Prepare roomTypes data with specified fields, no validation
+        const formattedRoomTypes = Array.isArray(roomTypes) ? roomTypes.map((room, index) => ({
+            Type: room.Type || '', // Default to empty string if not provided
+            PriceByHour: room.PriceByHour || 0, // Default to 0 if not provided
+            PriceBySection: room.PriceBySection || 0, // Default to 0 if not provided
+            PriceByNight: room.PriceByNight || 0 // Default to 0 if not provided
+        })) : [];
+
+        // Prepare hotel data with roomTypes included
         const hotelData = {
             Name: name,
             Description: description,
             Location: location,
             Email: email,
             PhoneNumber: phoneNumber,
-            RoomTypes: {}, // Initialize RoomTypes as an empty object
+            RoomTypes: formattedRoomTypes, // Use formatted roomTypes
             ...otherFields
         };
 
         // Save hotel data
         await set(hotelRef, hotelData);
-
-        // Save room types with pricing as a subcollection
-        const roomTypesRef = ref(database, `Hotel/${newHotelId}/RoomTypes`);
-        const roomTypesData = validRoomTypes.reduce((acc, room, index) => ({
-            ...acc,
-            [index]: {
-                Type: room.Type.trim(),
-                PriceByHour: room.PriceByHour,
-                PriceBySection: room.PriceBySection,
-                PriceByNight: room.PriceByNight
-            }
-        }), {});
-
-        await set(roomTypesRef, roomTypesData);
 
         // Verify the save
         const savedSnapshot = await get(hotelRef);
@@ -136,7 +106,7 @@ const createProperty = async (req, res) => {
                 location,
                 email,
                 phoneNumber,
-                roomTypes: validRoomTypes 
+                roomTypes: formattedRoomTypes // Return formatted roomTypes
             },
             message: 'Hotel created successfully'
         });
