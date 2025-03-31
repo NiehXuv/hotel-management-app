@@ -12,7 +12,7 @@ const { updateBooking } = require('./components/Booking/updateBooking');
 const { removeBooking } = require('./components/Booking/removeBooking');
 
 // Room functions
-const { createRoom, getHotelIds } = require('./components/Room/createRoom');
+const { createRoom, getHotelIds, getRoomTypes } = require('./components/Room/createRoom');
 const { updateRoomStatus } = require('./components/Room/updateRoomStatus');
 const { updateRoom } = require('./components/Room/updateRoom');
 const { listRooms } = require('./components/Room/listRooms');
@@ -66,6 +66,7 @@ app.delete('/booking/:bookingId', removeBooking);
 
 // Room routes
 app.get('/api/hotels/ids', getHotelIds);
+app.get('/api/hotel/:hotelId/roomTypes', getRoomTypes);
 app.post('/api/rooms/:hotelId', createRoom);
 app.put('/hotels/:hotelId/rooms/:roomNumber/status', updateRoomStatus);
 app.put('/hotels/:hotelId/rooms/:roomNumber', updateRoom);

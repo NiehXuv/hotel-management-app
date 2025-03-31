@@ -37,11 +37,59 @@ const getHotelIds = async (req, res) => {
     }
 };
 
+const getRoomTypes = async (req, res) => {
+    try {
+        const { hotelId } = req.params;
+
+        if (!hotelId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Hotel ID is required'
+            });
+        }
+
+        const roomTypesRef = ref(database, `Hotel/${hotelId}/RoomTypes`);
+        const snapshot = await get(roomTypesRef);
+
+        if (!snapshot.exists()) {
+            return res.status(200).json({
+                success: true,
+                data: [],
+                message: 'No room types found for this hotel'
+            });
+        }
+
+        const roomTypes = snapshot.val();
+        const roomTypeList = Object.values(roomTypes).map(roomType => ({
+            type: roomType.Type,
+            priceByHour: roomType.PriceByHour,
+            priceBySection: roomType.PriceBySection,
+            priceByNight: roomType.PriceByNight
+        }));
+
+        return res.status(200).json({
+            success: true,
+            data: roomTypeList,
+            message: 'Room types retrieved successfully'
+        });
+    } catch (error) {
+        console.error('Error fetching room types:', {
+            error: error.message,
+            stack: error.stack,
+            hotelId: req.params.hotelId
+        });
+        return res.status(500).json({
+            success: false,
+            error: 'Internal Server Error'
+        });
+    }
+};
+
 const createRoom = async (req, res) => {
     try {
         const { hotelId } = req.params;
         const { 
-            RoomName = '', 
+            RoomType = '', 
             Description = '', 
             PriceByHour = 0, 
             PriceByNight = 0, 
@@ -49,38 +97,23 @@ const createRoom = async (req, res) => {
             RoomNumber 
         } = req.body;
 
-        if (!hotelId || !RoomNumber || !RoomName || !Description) {
+        if (!hotelId || !RoomNumber || !RoomType || !Description) {
             return res.status(400).json({ 
                 success: false,
-                error: 'All fields are required' 
+                error: 'Hotel ID, Room Number, Room Type, and Description are required' 
             });
         }
 
-        if (RoomName.trim().length < 2) {
+        if (RoomType.trim().length < 2) {
             return res.status(400).json({ 
                 success: false,
-                error: 'Name must be at least 2 characters' 
+                error: 'Room Type must be at least 2 characters' 
             });
         }
         if (Description.trim().length < 10) {
             return res.status(400).json({ 
                 success: false,
                 error: 'Description must be at least 10 characters' 
-            });
-        }
-
-        if (isNaN(Number(PriceByHour)) || isNaN(Number(PriceByNight)) || isNaN(Number(PriceBySection))) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Price values must be numeric' 
-            });
-        }
-
-        const prices = [Number(PriceByHour), Number(PriceByNight), Number(PriceBySection)];
-        if (prices.some(price => price < 0)) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Prices cannot be negative' 
             });
         }
 
@@ -93,6 +126,27 @@ const createRoom = async (req, res) => {
             });
         }
 
+        // Check if RoomType exists in Hotel's RoomTypes and get prices
+        const roomTypesRef = ref(database, `Hotel/${hotelId}/RoomTypes`);
+        const roomTypesSnapshot = await get(roomTypesRef);
+        let matchedRoomType = null;
+        if (roomTypesSnapshot.exists()) {
+            const roomTypes = roomTypesSnapshot.val();
+            matchedRoomType = Object.values(roomTypes).find(rt => rt.Type === RoomType.trim());
+        }
+
+        if (!matchedRoomType) {
+            return res.status(400).json({
+                success: false,
+                error: `Room Type '${RoomType}' not found in hotel's RoomTypes`
+            });
+        }
+
+        // Use prices from RoomTypes if not provided in request body
+        const finalPriceByHour = PriceByHour !== 0 ? Number(PriceByHour) : matchedRoomType.PriceByHour;
+        const finalPriceByNight = PriceByNight !== 0 ? Number(PriceByNight) : matchedRoomType.PriceByNight;
+        const finalPriceBySection = PriceBySection !== 0 ? Number(PriceBySection) : matchedRoomType.PriceBySection;
+
         const roomRef = ref(database, `Hotel/${hotelId}/Room/${RoomNumber}`);
         const roomSnapshot = await get(roomRef);
         if (roomSnapshot.exists()) {
@@ -103,11 +157,11 @@ const createRoom = async (req, res) => {
         }
 
         await set(roomRef, {
-            RoomName: RoomName.trim(),
+            RoomType: RoomType.trim(),
             Description: Description.trim(),
-            PriceByHour: Number(PriceByHour),
-            PriceByNight: Number(PriceByNight),
-            PriceBySection: Number(PriceBySection),
+            PriceByHour: finalPriceByHour,
+            PriceByNight: finalPriceByNight,
+            PriceBySection: finalPriceBySection,
             Status: 'Available',
             CreatedAt: new Date().toISOString(),
             UpdatedAt: new Date().toISOString()
@@ -133,4 +187,4 @@ const createRoom = async (req, res) => {
     }
 };
 
-module.exports = { createRoom, getHotelIds };
+module.exports = { createRoom, getHotelIds, getRoomTypes };
