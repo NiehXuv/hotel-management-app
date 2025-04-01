@@ -90,6 +90,7 @@ const createRoom = async (req, res) => {
         const { hotelId } = req.params;
         const { 
             RoomType = '', 
+            RoomName = '', 
             Description = '', 
             PriceByHour = 0, 
             PriceByNight = 0, 
@@ -97,10 +98,11 @@ const createRoom = async (req, res) => {
             RoomNumber 
         } = req.body;
 
-        if (!hotelId || !RoomNumber || !RoomType || !Description) {
+        // Validation
+        if (!hotelId || !RoomNumber || !RoomType || !RoomName || !Description) {
             return res.status(400).json({ 
                 success: false,
-                error: 'Hotel ID, Room Number, Room Type, and Description are required' 
+                error: 'Hotel ID, Room Number, Room Type, Room Name, and Description are required' 
             });
         }
 
@@ -108,6 +110,12 @@ const createRoom = async (req, res) => {
             return res.status(400).json({ 
                 success: false,
                 error: 'Room Type must be at least 2 characters' 
+            });
+        }
+        if (RoomName.trim().length < 2) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Room Name must be at least 2 characters' 
             });
         }
         if (Description.trim().length < 10) {
@@ -156,12 +164,15 @@ const createRoom = async (req, res) => {
             });
         }
 
+        // Store RoomNumber as a field in the room data, matching the roomId
         await set(roomRef, {
             RoomType: RoomType.trim(),
+            RoomName: RoomName.trim(),
             Description: Description.trim(),
             PriceByHour: finalPriceByHour,
             PriceByNight: finalPriceByNight,
             PriceBySection: finalPriceBySection,
+            RoomNumber: RoomNumber.trim(), // Explicitly store RoomNumber as a field
             Status: 'Available',
             CreatedAt: new Date().toISOString(),
             UpdatedAt: new Date().toISOString()

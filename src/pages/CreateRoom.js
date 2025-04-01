@@ -8,6 +8,7 @@ const CreateRoom = () => {
   const [roomData, setRoomData] = useState({
     hotelId: '',
     RoomType: '',
+    RoomName: '',
     Description: '',
     PriceByHour: '',
     PriceByNight: '',
@@ -88,8 +89,9 @@ const CreateRoom = () => {
     const errors = {};
     if (!roomData.hotelId) errors.hotelId = 'Please select a property';
     if (!roomData.RoomType) errors.RoomType = 'Please select a room type';
+    if (!roomData.RoomName || roomData.RoomName.length < 2) errors.RoomName = 'Room name must be at least 2 characters';
     if (roomData.Description.length < 10) errors.Description = 'Description must be at least 10 characters';
-    if (!/^\d+$/.test(roomData.RoomNumber)) errors.RoomNumber = 'Room number must be numeric';
+    if (!roomData.RoomNumber) errors.RoomNumber = 'Please enter a room number'; // Relaxed numeric-only restriction
 
     setError(Object.values(errors)[0] || '');
     return Object.keys(errors).length === 0;
@@ -104,9 +106,8 @@ const CreateRoom = () => {
 
     setIsSubmitting(true);
     try {
-      const { hotelId, RoomType, Description, PriceByHour, PriceByNight, PriceBySection, RoomNumber } = roomData;
+      const { hotelId, RoomType, RoomName, Description, PriceByHour, PriceByNight, PriceBySection, RoomNumber } = roomData;
 
-      // Find the matching room type to use its prices if not provided
       const matchedRoomType = roomTypes.find(rt => rt.type === RoomType) || {};
 
       const response = await fetch(`http://localhost:5000/api/rooms/${hotelId}`, {
@@ -114,6 +115,7 @@ const CreateRoom = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           RoomType,
+          RoomName,
           Description,
           PriceByHour: PriceByHour || matchedRoomType.priceByHour || 0,
           PriceByNight: PriceByNight || matchedRoomType.priceByNight || 0,
@@ -125,10 +127,11 @@ const CreateRoom = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setSuccessMessage(data.message || 'Room created successfully!');
+        setSuccessMessage(`${data.message} (Room ID: ${data.data.roomId})`); // Include roomId in success message
         setRoomData({
           hotelId: '',
           RoomType: '',
+          RoomName: '',
           Description: '',
           PriceByHour: '',
           PriceByNight: '',
@@ -233,6 +236,17 @@ const CreateRoom = () => {
           </div>
 
           <Input
+            name="RoomName"
+            label="Room Name"
+            value={roomData.RoomName}
+            onChange={handleChange}
+            required
+            placeholder="Enter room name (e.g., Ocean View Single)"
+            className="text-sm sm:text-base"
+            aria-label="Room Name"
+          />
+
+          <Input
             name="Description"
             label="Description"
             value={roomData.Description}
@@ -286,7 +300,7 @@ const CreateRoom = () => {
             value={roomData.RoomNumber}
             onChange={handleChange}
             required
-            placeholder="Enter room number"
+            placeholder="Enter room number (e.g., 101 or A101)"
             className="text-sm sm:text-base"
             aria-label="Room Number"
           />
