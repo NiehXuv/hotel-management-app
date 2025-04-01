@@ -4,7 +4,6 @@ import BottomNav from '../components/layout/BottomNavigation';
 import Card from '../components/common/Card';
 
 const Calendar = () => {
-  // State variables
   const [bookings, setBookings] = useState([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
@@ -13,35 +12,36 @@ const Calendar = () => {
   const [selectedHotel, setSelectedHotel] = useState('');
   const [loadingHotels, setLoadingHotels] = useState(false);
   const [error, setError] = useState('');
-  const [allRooms, setAllRooms] = useState([]); // Store all rooms
-  const [rooms, setRooms] = useState([]); // Filtered rooms
+  const [allRooms, setAllRooms] = useState([]);
+  const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState('');
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [roomError, setRoomError] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
+  const [selectedBookingStatus, setSelectedBookingStatus] = useState('');
 
   const navigate = useNavigate();
   const touchStartX = useRef(null);
 
-  // Fetch bookings and hotels on component mount
   useEffect(() => {
     fetchBookings();
     fetchHotelIds();
   }, []);
 
-  // Fetch rooms for all hotels when hotels are loaded
   useEffect(() => {
     if (hotels.length > 0) {
       fetchAllRooms();
     }
   }, [hotels]);
 
-  // Filter rooms when a hotel is selected
   useEffect(() => {
     if (selectedHotel) {
       const filteredRooms = allRooms.filter(room => room.hotelId === selectedHotel);
       setRooms(filteredRooms);
     } else {
-      setRooms(allRooms); // Reset to all rooms if no hotel is selected
+      setRooms(allRooms);
     }
   }, [selectedHotel, allRooms]);
 
@@ -53,7 +53,6 @@ const Calendar = () => {
       });
       if (!response.ok) throw new Error('Failed to fetch bookings');
       const data = await response.json();
-      // Extract bookings and add id to each booking object
       const bookingsData = data.bookings
         ? Object.entries(data.bookings).map(([id, booking]) => ({
             ...booking,
@@ -90,7 +89,6 @@ const Calendar = () => {
     }
   };
 
-  // Fetch rooms for all hotels
   const fetchAllRooms = async () => {
     setLoadingRooms(true);
     setRoomError('');
@@ -131,12 +129,12 @@ const Calendar = () => {
   }, [hotels]);
 
   const roomMap = useMemo(() => {
-    return rooms.reduce((map, room) => {
+    return allRooms.reduce((map, room) => {
       const key = `${room.hotelId}-${room.id}`;
       map[key] = room.RoomName;
       return map;
     }, {});
-  }, [rooms]);
+  }, [allRooms]);
 
   const getHotelNameById = (hotelId) => hotelMap[hotelId] || 'Unknown Hotel';
 
@@ -157,10 +155,25 @@ const Calendar = () => {
         return false;
       }
       const dateMatch = bookingDate.toDateString() === date.toDateString();
+      const hotelName = getHotelNameById(booking.hotelId);
+      const roomName = getRoomNameById(booking.hotelId, booking.roomId);
+      const query = searchQuery.toLowerCase();
+
+      const matchesQuery =
+        (searchQuery === '') ||
+        `${booking.id}`.toLowerCase().includes(query) ||
+        (booking.customerId && booking.customerId.toLowerCase().includes(query)) ||
+        hotelName.toLowerCase().includes(query) ||
+        roomName.toLowerCase().includes(query) ||
+        (booking.paymentStatus && booking.paymentStatus.toLowerCase().includes(query)) ||
+        (booking.bookingStatus && booking.bookingStatus.toLowerCase().includes(query));
+
       const hotelMatch = selectedHotel ? booking.hotelId === selectedHotel : true;
       const roomMatch = selectedRoom ? booking.roomId === selectedRoom : true;
-      console.log(`Checking booking ${booking.id}: bookIn=${booking.bookIn}, dateMatch=${dateMatch}, hotelMatch=${hotelMatch}, roomMatch=${roomMatch}`);
-      return dateMatch && hotelMatch && roomMatch;
+      const paymentStatusMatch = selectedPaymentStatus ? booking.paymentStatus === selectedPaymentStatus : true;
+      const bookingStatusMatch = selectedBookingStatus ? booking.bookingStatus === selectedBookingStatus : true;
+
+      return dateMatch && matchesQuery && hotelMatch && roomMatch && paymentStatusMatch && bookingStatusMatch;
     });
   };
 
@@ -178,9 +191,12 @@ const Calendar = () => {
 
   const generateDayRange = () => {
     const days = [];
-    for (let i = -3; i <= 3; i++) {
-      const date = new Date(currentDate);
-      date.setDate(currentDate.getDate() + i);
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1));
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
       days.push(date);
     }
     return days;
@@ -218,7 +234,7 @@ const Calendar = () => {
         time,
         color,
       };
-    }).filter(slot => slot !== null); // Remove invalid slots
+    }).filter(slot => slot !== null);
 
     console.log('Booked slots:', bookedSlots);
 
@@ -248,10 +264,6 @@ const Calendar = () => {
     setSelectedBookings([]);
   };
 
-  const handleBack = () => {
-    navigate('/dashboard');
-  };
-
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -267,7 +279,6 @@ const Calendar = () => {
   };
 
   const formattedMonth = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-
   const { timeSlotMap, bookedTimes } = generateBookedTimeSlots();
 
   return (
@@ -316,59 +327,109 @@ const Calendar = () => {
         </div>
       </Card>
 
-      <Card style={{ borderRadius: '2em' }}>
-        <details>
-          <summary style={{ cursor: 'pointer', fontSize: '1.1rem', listStyle: 'none', marginBottom: '2%' }}>
-            Filter Booking
-          </summary>
-          <div style={styles.filterContainer}>
-            <label htmlFor="hotelFilter" style={styles.label}>
-              By Hotel
-            </label>
-            <select
-              id="hotelFilter"
-              value={selectedHotel}
-              onChange={(e) => setSelectedHotel(e.target.value)}
-              disabled={loadingHotels}
-              style={{ borderRadius: '2em' }}
-            >
-              <option value="">All Hotels</option>
-              {hotels
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((hotel) => (
-                  <option key={hotel.id} value={hotel.id}>
-                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
-                  </option>
-                ))}
-            </select>
-            {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
-            {error && <p style={styles.errorText}>{error}</p>}
+      <div style={styles.searchContainer}>
+        <input
+          type="text"
+          placeholder="Search by Hotel, Room, Customer..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={styles.searchInput}
+        />
+      </div>
+
+        <button
+          style={{
+            ...styles.filterButton,
+            backgroundColor: showFilter ? '#ADD8E6' : '#fff',
+          }}
+          onClick={() => setShowFilter(!showFilter)}
+        >
+          Filter {showFilter ? '▲' : '▼'}
+        </button>
+        {showFilter && (
+          <div style={styles.filterContent}>
+            <div style={styles.filterContainer}>
+              <label htmlFor="hotelFilter" style={styles.label}>
+                By Hotel
+              </label>
+              <select
+                id="hotelFilter"
+                value={selectedHotel}
+                onChange={(e) => {
+                  setSelectedHotel(e.target.value);
+                  setSelectedRoom('');
+                }}
+                disabled={loadingHotels}
+                style={{ borderRadius: '1em', padding: '0.5em' }}
+              >
+                <option value="">All Hotels</option>
+                {hotels
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((hotel) => (
+                    <option key={hotel.id} value={hotel.id}>
+                      {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
+                    </option>
+                  ))}
+              </select>
+              {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
+              {error && <p style={styles.errorText}>{error}</p>}
+            </div>
+            <div style={styles.filterContainer}>
+              <label htmlFor="roomFilter" style={styles.label}>
+                By Room
+              </label>
+              <select
+                id="roomFilter"
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                disabled={!selectedHotel || loadingRooms}
+                style={{ borderRadius: '1em', padding: '0.5em' }}
+              >
+                <option value="">All Rooms</option>
+                {rooms
+                  .sort((a, b) => a.RoomName.localeCompare(b.RoomName))
+                  .map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.RoomName.charAt(0).toUpperCase() + room.RoomName.slice(1)}
+                    </option>
+                  ))}
+              </select>
+              {loadingRooms && <p style={styles.loadingText}>Loading rooms...</p>}
+              {roomError && <p style={styles.errorText}>{roomError}</p>}
+            </div>
+            <div style={styles.filterContainer}>
+              <label htmlFor="paymentStatusFilter" style={styles.label}>
+                By Payment Status
+              </label>
+              <select
+                id="paymentStatusFilter"
+                value={selectedPaymentStatus}
+                onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                style={{ borderRadius: '1em', padding: '0.5em' }}
+              >
+                <option value="">All Payment Statuses</option>
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+              </select>
+            </div>
+            <div style={styles.filterContainer}>
+              <label htmlFor="bookingStatusFilter" style={styles.label}>
+                By Booking Status
+              </label>
+              <select
+                id="bookingStatusFilter"
+                value={selectedBookingStatus}
+                onChange={(e) => setSelectedBookingStatus(e.target.value)}
+                style={{ borderRadius: '1em', padding: '0.5em' }}
+              >
+                <option value="">All Booking Statuses</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Pending">Pending</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
           </div>
-          <div style={styles.filterContainer}>
-            <label htmlFor="roomFilter" style={styles.label}>
-              By Room
-            </label>
-            <select
-              id="roomFilter"
-              value={selectedRoom}
-              onChange={(e) => setSelectedRoom(e.target.value)}
-              disabled={!selectedHotel || loadingRooms}
-              style={{ borderRadius: '2em' }}
-            >
-              <option value="">All Rooms</option>
-              {rooms
-                .sort((a, b) => a.RoomName.localeCompare(b.RoomName))
-                .map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.RoomName.charAt(0).toUpperCase() + room.RoomName.slice(1)}
-                  </option>
-                ))}
-            </select>
-            {loadingRooms && <p style={styles.loadingText}>Loading rooms...</p>}
-            {roomError && <p style={styles.errorText}>{roomError}</p>}
-          </div>
-        </details>
-      </Card>
+        )}
 
       {bookedTimes.length === 0 && (
         <p style={styles.noBooking}>No bookings for this day.</p>
@@ -392,8 +453,17 @@ const Calendar = () => {
                         }}
                         onClick={() => handleTimeSlotClick(slot.booking)}
                       >
-                        <div>{getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}</div>
-                        <div>{slot.booking.customerId}</div>
+                        <div style={styles.bookingDetailsLeft}>
+                          <div style={styles.hotelName}>
+                            {getHotelNameById(slot.booking.hotelId)}
+                          </div>
+                          <div style={styles.roomName}>
+                            {getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}
+                          </div>
+                        </div>
+                        <div style={styles.customerName}>
+                          {slot.booking.customerId}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -425,6 +495,8 @@ const Calendar = () => {
                     <p>Check-out: {booking.bookOut}</p>
                     <p>ETA: {booking.eta}</p>
                     <p>ETD: {booking.etd}</p>
+                    <p>Payment Status: {booking.paymentStatus}</p>
+                    <p>Booking Status: {booking.bookingStatus}</p>
                   </div>
                 ))}
               </>
@@ -437,7 +509,6 @@ const Calendar = () => {
   );
 };
 
-// Styles (unchanged)
 const styles = {
   scheduleContainer: {
     margin: 'auto',
@@ -454,18 +525,6 @@ const styles = {
     justifyContent: 'space-between',
     position: 'relative',
     marginBottom: '1em',
-  },
-  backButton: {
-    position: 'absolute',
-    left: 0,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    fontSize: '24px',
-    cursor: 'pointer',
-    color: '#333',
-    padding: '5px 10px',
   },
   monthTitle: {
     flex: 1,
@@ -518,6 +577,30 @@ const styles = {
     fontSize: '18px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   },
+  searchContainer: {
+    marginBottom: '1em',
+    width: '100%',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '0.5em',
+    borderRadius: '1em',
+    border: '1px solid #ccc',
+    fontSize: '0.9rem',
+  },
+  filterButton: {
+    padding: '0.5em 1em',
+    fontSize: '0.9rem',
+    border: 'none',
+    marginBottom: '1em',
+    borderRadius: '2em',
+    cursor: 'pointer',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    backgroundColor: '#fff',
+  },
+  filterContent: {
+    padding: '1em',
+  },
   scheduleCard: {
     width: '100%',
     margin: 'auto',
@@ -552,23 +635,37 @@ const styles = {
   },
   bookingCard: {
     width: '100%',
-    height: '3em',
-    margin: '3px 0',
-    padding: '1em',
-    backgroundColor: '#4a90e2',
+    minHeight: '4em', // Reduced height to match image
+    margin: '5px 0',
+    padding: '0.8em',
     border: '1px solid rgb(211, 214, 218)',
-    borderRadius: '2em',
+    borderRadius: '1em', // Slightly smaller border radius
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     fontSize: '14px',
     color: '#000',
-    whiteSpace: 'nowrap',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-    textAlign: 'center',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    cursor: 'pointer',
+  },
+  bookingDetailsLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: '0.2em',
+  },
+  hotelName: {
+    fontWeight: 'bold',
+    fontSize: '14px',
+  },
+  roomName: {
+    fontSize: '12px',
+    color: '#555',
+  },
+  customerName: {
+    fontSize: '14px',
+    textAlign: 'right',
   },
   noBooking: {
     textAlign: 'center',
@@ -627,20 +724,19 @@ const styles = {
   filterContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: '0.5rem',
     marginBottom: '1rem',
-    borderRadius: '2em',
   },
   label: {
-    fontSize: '1rem',
-    marginBottom: '0.5rem',
+    fontSize: '0.9rem',
+    marginBottom: '0.3rem',
   },
   loadingText: {
-    fontSize: '0.9rem',
+    fontSize: '0.8rem',
     color: '#666',
   },
   errorText: {
-    fontSize: '0.9rem',
+    fontSize: '0.8rem',
     color: '#dc2626',
   },
 };
