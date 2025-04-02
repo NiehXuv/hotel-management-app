@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import {useLocation} from 'react-router-dom';
+import Button from '../common/Button';
+import { HiChevronLeft } from 'react-icons/hi';
 
 /**
  * Mobile-Optimized Header Component
@@ -10,6 +13,7 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const toggleMenu = () => setMenuOpen(prevState => !prevState);
   const closeMenu = () => setMenuOpen(false);
@@ -24,6 +28,19 @@ const Header = () => {
     navigate('/profile');
     closeMenu();
   };
+
+  //mapping backback
+  // const parentMap = {
+  //   '/properties': '/dashboard',
+  //   '/reports' :'/dashboard',
+  // }
+  // const currentPath = location.pathname;
+  // const backTarget = parentMap[currentPath];
+  // const showBackButton = !!backTarget;
+
+
+  //history back
+  const showBackButton = location.pathname !== '/dashboard';
   
   const formatRole = (role) => {
     return role.charAt(0).toUpperCase() + role.slice(1);
@@ -33,9 +50,21 @@ const Header = () => {
     <nav className=" top-0 left-0 right-0 h-[var(--footer-height)] bg-white border-t border-neutral-200 ">
       <div className="flex justify-between items-center h-full px-md max-w-[480px] mx-auto">
         {/* App Logo/Title */}
-        <div className="flex items-center">
+        <div className="flex flex-col items-start gap-1">
           <h1 className="text-lg font-semibold text-primary">Inspirest Booking</h1>
-        </div>
+
+            {showBackButton && (
+              <Button
+                onClick={() => navigate(-1)} // ← History back
+                className="w-12 h-12 flex items-center justify-center rounded-full border border-gray-400 hover:bg-gray-100 transition"
+                aria-label="Back"
+                
+              >
+                 <HiChevronLeft className="text-2xl" />
+              </Button>
+            )}
+          </div>
+
         
         {/* User Profile Button */}
         <button 
