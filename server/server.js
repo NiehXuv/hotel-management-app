@@ -51,6 +51,7 @@ const { clearAllNotifications } = require('./components/Notification/deleteNotif
 const { listStaff } = require('./components/Staff/listStaff.js');
 const { financialReport } = require("./components/Reports/financialReport");
 const { createAccount } = require('./components/Account/createAccount');
+const { storeConfirmationCode, verifyConfirmationCode, sendConfirmationEmail } = require('./components/Account/confirmationCode');
 
 const app = express();
 app.use(express.json());
@@ -63,7 +64,12 @@ app.get('/booking/list', listAllBookings);
 app.post('/booking/create', createBooking);
 app.put('/booking/:bookingId', updateBooking);
 app.delete('/booking/:bookingId', removeBooking);
-app.post('/account', createAccount);
+app.post('/api/create-account', createAccount);
+app.post('/api/store-confirmation-code', storeConfirmationCode);
+app.post('/api/verify-confirmation-code', verifyConfirmationCode);
+app.post('/api/send-confirmation-email', sendConfirmationEmail);
+
+
 // Room routes
 app.get('/api/hotels/ids', getHotelIds);
 app.get('/api/hotel/:hotelId/roomTypes', getRoomTypes);

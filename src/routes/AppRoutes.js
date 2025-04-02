@@ -27,6 +27,7 @@ import Booking from '../pages/Booking';
 import Menu from '../pages/Menu';
 import Property from '../pages/Property';
 import Room from '../pages/Room'; 
+import CreateAccount from '../pages/CreateAccount'; 
 
 /**
  * Protected Route Component
@@ -57,6 +58,7 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/create-account" element={<CreateAccount />} /> {/* Moved to public routes and fixed path */}
 
       {/* Protected Routes */}
       <Route 
@@ -250,7 +252,7 @@ const AppRoutes = () => {
         path="/properties/:hotelId/rooms" 
         element={
           <ProtectedRoute>
-            <Room  />
+            <Room />
           </ProtectedRoute>
         } 
       />
