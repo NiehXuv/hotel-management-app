@@ -12,11 +12,13 @@ const Booking = () => {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
   const [selectedBookingStatus, setSelectedBookingStatus] = useState('');
+  const [selectedTimeRange, setSelectedTimeRange] = useState(''); // State for time range filter
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // State to toggle filter visibility
 
   const navigate = useNavigate();
 
@@ -193,6 +195,52 @@ const Booking = () => {
     setSelectedBooking(null);
   };
 
+  // Function to check if a booking falls within a specific time range
+  const isBookingInTimeRange = (booking, range) => {
+    const bookInDate = parseDate(booking.bookIn);
+    if (!bookInDate) return false;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    // Define the start and end of the current month
+    const startOfMonth = new Date(currentYear, currentMonth, 1);
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0); // Last day of the current month
+
+    // Define the start and end of the next month
+    const startOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
+    const endOfNextMonth = new Date(currentYear, currentMonth + 2, 0); // Last day of the next month
+
+    // Define the start and end of the current week (Monday to Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1)); // Start of the week (Monday)
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // End of the week (Sunday)
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Define the start and end of the next week
+    const startOfNextWeek = new Date(startOfWeek);
+    startOfNextWeek.setDate(startOfWeek.getDate() + 7);
+
+    const endOfNextWeek = new Date(startOfNextWeek);
+    endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+    endOfNextWeek.setHours(23, 59, 59, 999);
+
+    if (range === 'thisMonth') {
+      return bookInDate >= startOfMonth && bookInDate <= endOfMonth;
+    } else if (range === 'thisWeek') {
+      return bookInDate >= startOfWeek && bookInDate <= endOfWeek;
+    } else if (range === 'nextWeek') {
+      return bookInDate >= startOfNextWeek && bookInDate <= endOfNextWeek;
+    } else if (range === 'nextMonth') {
+      return bookInDate >= startOfNextMonth && bookInDate <= endOfNextMonth;
+    }
+    return true; // If no range is selected, include all bookings
+  };
+
   // Memoized filtered bookings to prevent unnecessary re-computations
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
@@ -219,9 +267,12 @@ const Booking = () => {
       // Apply booking status filter
       const matchesBookingStatus = selectedBookingStatus ? booking.bookingStatus === selectedBookingStatus : true;
 
-      return matchesQuery && matchesHotel && matchesRoom && matchesPaymentStatus && matchesBookingStatus;
+      // Apply time range filter
+      const matchesTimeRange = isBookingInTimeRange(booking, selectedTimeRange);
+
+      return matchesQuery && matchesHotel && matchesRoom && matchesPaymentStatus && matchesBookingStatus && matchesTimeRange;
     });
-  }, [bookings, searchQuery, selectedHotel, selectedRoom, selectedPaymentStatus, selectedBookingStatus, hotels, rooms]);
+  }, [bookings, searchQuery, selectedHotel, selectedRoom, selectedPaymentStatus, selectedBookingStatus, selectedTimeRange, hotels, rooms]);
 
   // Memoized grouped bookings to prevent unnecessary re-computations
   const groupedBookings = useMemo(() => {
@@ -262,7 +313,7 @@ const Booking = () => {
       maxWidth: '480px',
       minHeight: '100vh',
       touchAction: 'pan-y',
-      paddingBottom: '2em',
+      paddingBottom: '4em',
     },
     header: {
       fontSize: '24px',
@@ -300,13 +351,30 @@ const Booking = () => {
       width: '100%',
       padding: '0.5rem',
       border: '1px solid rgb(211, 214, 218)',
-      borderRadius: '5px',
+      borderRadius: '2em',
       fontSize: '14px',
       backgroundColor: '#fff',
       boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+      marginBottom: '1rem',
+    },
+    filterButton: {
+      padding: '0.5rem 1rem',
+      backgroundColor: '#FFD167',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '2em',
+      fontSize: '14px',
+      cursor: 'pointer',
+      marginBottom: '1rem',
+      display: 'block',
+      width: 'fit-content',
     },
     filterContainer: {
       marginBottom: '0.5rem',
+      backgroundColor: '#fff',
+      padding: '1rem',
+      borderRadius: '1em',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
     },
     label: {
       display: 'block',
@@ -429,112 +497,138 @@ const Booking = () => {
 
   return (
     <div style={styles.container}>
-      {/* Filter Section in Card */}
+      {/* Search Bar */}
       {!loading && (
-        <Card style={{ borderRadius: '1.8em', padding: 'auto' }}>
-          <details>
-            <summary style={{ cursor: 'pointer', fontSize: '1.1rem', listStyle: 'none' }}>
-              Filter Bookings
-            </summary>
-            {/* Search Bar */}
+        <div>
+          <label htmlFor="search" style={styles.label}>
+            Search by Hotel, Room, or Customer
+          </label>
+          <input
+            type="text"
+            id="search"
+            name="search"
+            placeholder="Search by Hotel, Room name, or Customer ID"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={styles.searchInput}
+            aria-label="Search Bookings"
+          />
+        </div>
+      )}
+
+      {/* Filter Button and Filter Section */}
+      {!loading && (
+        <div>
+          <button
+            style={styles.filterButton}
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+          >
+            {isFilterOpen ? 'Hide Filters' : 'Show Filters'}
+          </button>
+          {isFilterOpen && (
             <div style={styles.filterContainer}>
-              <label htmlFor="search" style={styles.label}>
-                Search by Hotel, Room, or Customer
-              </label>
-              <input
-                type="text"
-                id="search"
-                name="search"
-                placeholder="Search by Hotel, Room name, or Customer ID"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={styles.searchInput}
-                aria-label="Search Bookings"
-              />
-            </div>
-            {/* Hotel Filter */}
-            <div style={styles.filterContainer}>
-              <label htmlFor="hotelFilter" style={styles.label}>
-                By Hotel
-              </label>
-              <select
-                id="hotelFilter"
-                value={selectedHotel}
-                onChange={(e) => {
-                  setSelectedHotel(e.target.value);
-                  setSelectedRoom('');
-                }}
-                style={styles.hotelSelect}
-              >
-                <option value="">All Hotels</option>
-                {hotels
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((hotel) => (
-                    <option key={hotel.id} value={hotel.id}>
-                      {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            {/* Room Filter */}
-            <div style={styles.filterContainer}>
-              <label htmlFor="roomFilter" style={styles.label}>
-                By Room
-              </label>
-              <select
-                id="roomFilter"
-                value={selectedRoom}
-                onChange={(e) => setSelectedRoom(e.target.value)}
-                disabled={!selectedHotel}
-                style={styles.hotelSelect}
-              >
-                <option value="">All Rooms</option>
-                {selectedHotel &&
-                  rooms[selectedHotel]?.length > 0 &&
-                  rooms[selectedHotel]
-                    .sort((a, b) => (a.RoomName || '').localeCompare(b.RoomName || ''))
-                    .map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {(room.RoomName || '').charAt(0).toUpperCase() + (room.RoomName || '').slice(1)}
+              {/* Hotel Filter */}
+              <div style={styles.filterContainer}>
+                <label htmlFor="hotelFilter" style={styles.label}>
+                  By Hotel
+                </label>
+                <select
+                  id="hotelFilter"
+                  value={selectedHotel}
+                  onChange={(e) => {
+                    setSelectedHotel(e.target.value);
+                    setSelectedRoom('');
+                  }}
+                  style={styles.hotelSelect}
+                >
+                  <option value="">All Hotels</option>
+                  {hotels
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((hotel) => (
+                      <option key={hotel.id} value={hotel.id}>
+                        {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
                       </option>
                     ))}
-              </select>
+                </select>
+              </div>
+              {/* Room Filter */}
+              <div style={styles.filterContainer}>
+                <label htmlFor="roomFilter" style={styles.label}>
+                  By Room
+                </label>
+                <select
+                  id="roomFilter"
+                  value={selectedRoom}
+                  onChange={(e) => setSelectedRoom(e.target.value)}
+                  disabled={!selectedHotel}
+                  style={styles.hotelSelect}
+                >
+                  <option value="">All Rooms</option>
+                  {selectedHotel &&
+                    rooms[selectedHotel]?.length > 0 &&
+                    rooms[selectedHotel]
+                      .sort((a, b) => (a.RoomName || '').localeCompare(b.RoomName || ''))
+                      .map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {(room.RoomName || '').charAt(0).toUpperCase() + (room.RoomName || '').slice(1)}
+                        </option>
+                      ))}
+                </select>
+              </div>
+              {/* Payment Status Filter */}
+              <div style={styles.filterContainer}>
+                <label htmlFor="paymentStatusFilter" style={styles.label}>
+                  By Payment Status
+                </label>
+                <select
+                  id="paymentStatusFilter"
+                  value={selectedPaymentStatus}
+                  onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+                  style={styles.hotelSelect}
+                >
+                  <option value="">All Payment Statuses</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Unpaid">Unpaid</option>
+                </select>
+              </div>
+              {/* Booking Status Filter */}
+              <div style={styles.filterContainer}>
+                <label htmlFor="bookingStatusFilter" style={styles.label}>
+                  By Booking Status
+                </label>
+                <select
+                  id="bookingStatusFilter"
+                  value={selectedBookingStatus}
+                  onChange={(e) => setSelectedBookingStatus(e.target.value)}
+                  style={styles.hotelSelect}
+                >
+                  <option value="">All Booking Statuses</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
+              {/* Time Range Filter */}
+              <div style={styles.filterContainer}>
+                <label htmlFor="timeRangeFilter" style={styles.label}>
+                  By Time Range
+                </label>
+                <select
+                  id="timeRangeFilter"
+                  value={selectedTimeRange}
+                  onChange={(e) => setSelectedTimeRange(e.target.value)}
+                  style={styles.hotelSelect}
+                >
+                  <option value="">All Time Ranges</option>
+                  <option value="thisWeek">This Week</option>
+                  <option value="thisMonth">This Month</option>
+                  <option value="nextWeek">Next Week</option>
+                  <option value="nextMonth">Next Month</option>
+                </select>
+              </div>
             </div>
-            {/* Payment Status Filter */}
-            <div style={styles.filterContainer}>
-              <label htmlFor="paymentStatusFilter" style={styles.label}>
-                By Payment Status
-              </label>
-              <select
-                id="paymentStatusFilter"
-                value={selectedPaymentStatus}
-                onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                style={styles.hotelSelect}
-              >
-                <option value="">All Payment Statuses</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-              </select>
-            </div>
-            {/* Booking Status Filter */}
-            <div style={styles.filterContainer}>
-              <label htmlFor="bookingStatusFilter" style={styles.label}>
-                By Booking Status
-              </label>
-              <select
-                id="bookingStatusFilter"
-                value={selectedBookingStatus}
-                onChange={(e) => setSelectedBookingStatus(e.target.value)}
-                style={styles.hotelSelect}
-              >
-                <option value="">All Booking Statuses</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Pending">Pending</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-          </details>
-        </Card>
+          )}
+        </div>
       )}
 
       {/* Loading State */}
@@ -553,7 +647,7 @@ const Booking = () => {
       {/* No Bookings or Search Results */}
       {!loading && !error && sortedDates.length === 0 && (
         <p style={styles.noBookings}>
-          {searchQuery || selectedHotel || selectedRoom || selectedPaymentStatus || selectedBookingStatus
+          {searchQuery || selectedHotel || selectedRoom || selectedPaymentStatus || selectedBookingStatus || selectedTimeRange
             ? 'No bookings match your filters.'
             : 'No bookings found.'}
         </p>

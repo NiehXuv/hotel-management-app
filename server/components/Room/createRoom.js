@@ -1,6 +1,82 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, set, get } = require("firebase/database");
 
+const showRoom = async (req, res) => {
+    try {
+        const { hotelId, roomId } = req.params;
+
+        // Validation
+        if (!hotelId || !roomId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Hotel ID and Room ID are required'
+            });
+        }
+
+        // Check if hotel exists
+        const hotelRef = ref(database, `Hotel/${hotelId}`);
+        const hotelSnapshot = await get(hotelRef);
+        if (!hotelSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Hotel not found'
+            });
+        }
+
+        // Get specific room
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomId}`);
+        const roomSnapshot = await get(roomRef);
+        
+        if (!roomSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Room not found'
+            });
+        }
+
+        const roomData = roomSnapshot.val();
+        
+        // Prepare response data
+        const roomResponse = {
+            hotelId,
+            roomId,
+            roomType: roomData.RoomType,
+            roomName: roomData.RoomName,
+            description: roomData.Description,
+            priceByHour: roomData.PriceByHour,
+            priceByNight: roomData.PriceByNight,
+            priceBySection: roomData.PriceBySection,
+            roomNumber: roomData.RoomNumber,
+            status: roomData.Status,
+            createdAt: roomData.CreatedAt,
+            updatedAt: roomData.UpdatedAt
+        };
+
+        return res.status(200).json({
+            success: true,
+            data: roomResponse,
+            message: 'Room retrieved successfully'
+        });
+
+    } catch (error) {
+        console.error('Error fetching room:', {
+            error: error.message,
+            stack: error.stack,
+            hotelId: req.params.hotelId,
+            roomId: req.params.roomId
+        });
+        
+        const errorMessage = error.code === 'PERMISSION_DENIED' 
+            ? 'Permission denied' 
+            : 'Internal Server Error';
+            
+        return res.status(500).json({
+            success: false,
+            error: errorMessage
+        });
+    }
+};
+
 const getHotelIds = async (req, res) => {
     try {
         const hotelsRef = ref(database, 'Hotel');
@@ -196,6 +272,7 @@ const createRoom = async (req, res) => {
             error: errorMessage 
         });
     }
+    
 };
 
-module.exports = { createRoom, getHotelIds, getRoomTypes };
+module.exports = { createRoom, getHotelIds, getRoomTypes, showRoom };
