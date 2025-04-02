@@ -5,20 +5,11 @@ import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { StatusBadge } from '../components/common/Badge';
 
-/**
- * PropertyDetails Page Component
- * 
- * Provides an interface for viewing a specific property's details, key metrics,
- * recent activities, active issues, and room equipment across multiple tabs.
- * 
- * @module Pages/PropertyDetails
- */
 const PropertyDetails = () => {
-  // Define styles object
   const styles = {
     pageContainer: {
       paddingBottom: '2em',
-      padding:'1em',
+      padding: '1em',
       width: '100vw',
       maxWidth: '480px',
       marginBottom: '4em',
@@ -82,15 +73,15 @@ const PropertyDetails = () => {
       fontSize: '16px',
       cursor: 'pointer',
       textAlign: 'center',
-      width: 'fit-content', // Ensures the button only takes the width of its content
-      margin: '0 auto', // Centers the button horizontally
-      display: 'block', // Still works with margin: '0 auto' for centering
+      width: 'fit-content',
+      margin: '0 auto',
+      display: 'block',
     },
     detailsCard: {
       marginBottom: '16px',
       padding: '16px',
       display: 'flex',
-      justifyContent: 'space-between', // Ensures left and right sections are spaced apart
+      justifyContent: 'space-between',
       alignItems: 'center',
     },
     detailsLeft: {
@@ -113,7 +104,6 @@ const PropertyDetails = () => {
       color: '#999',
       marginLeft: '8px',
     },
-    
     tabContainer: {
       display: 'flex',
       borderBottom: '1px solid #e5e7eb',
@@ -122,7 +112,7 @@ const PropertyDetails = () => {
     },
     tabButton: {
       padding: '8px 16px',
-      fontSize:  '15px',
+      fontSize: '15px',
       fontWeight: '500',
       whiteSpace: 'nowrap',
       background: 'none',
@@ -133,7 +123,6 @@ const PropertyDetails = () => {
     tabButtonActive: {
       color: '#3b82f6',
       borderBottom: '2px #42A5F5',
-
     },
     tabButtonHover: {
       color: '#111827',
@@ -214,14 +203,12 @@ const PropertyDetails = () => {
       marginBottom: '12px',
       paddingLeft: '1em',
     },
-    
     sectionHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: '12px',
     },
-
     activityCard: {
       borderRadius: '2em',
       backgroundColor: 'rgba(21, 228, 149, 0.27)',
@@ -251,22 +238,6 @@ const PropertyDetails = () => {
     activityTime: {
       color: 'black',
     },
-    
-    activityDetails: {
-      fontSize: '16px',
-      margin: '0 0 4px 0',
-    },
-    activityFooter: {
-      display: 'flex',
-      gap: '12px',
-      fontSize: '14px',
-      color: '#666',
-      alignItems: 'center',
-    },
-    activityUser: {
-      fontWeight: '500',
-    },
-    activityTime: {},
     issueItem: {
       padding: '12px 0',
       borderBottom: '1px solid #e5e7eb',
@@ -298,39 +269,85 @@ const PropertyDetails = () => {
       alignItems: 'center',
       fontSize: '12px',
     },
-    issueDate: {
+    issueDate: {},
+    modalOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+    },
+    modalContent: {
+      backgroundColor: 'white',
+      padding: '20px',
+      borderRadius: '8px',
+      width: '400px',
+      maxWidth: '90%',
+      maxHeight: '90vh',
+      overflowY: 'auto',
+    },
+    modalHeader: {
+      marginBottom: '16px',
+      fontSize: '18px',
+      fontWeight: '600',
+    },
+    formField: {
+      marginBottom: '12px',
+    },
+    input: {
+      width: '100%',
+      padding: '8px',
+      borderRadius: '4px',
+      border: '1px solid #e5e7eb',
+    },
+    successMessage: {
+      color: '#10b981',
+      marginTop: '12px',
+      textAlign: 'center',
+    },
+    errorMessage: {
+      color: '#dc2626',
+      marginTop: '12px',
+      textAlign: 'center',
     },
   };
 
-  // Extract hotel ID from route parameters
   const { id } = useParams();
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   
-  // Component state initialization
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
-  
-  /**
-   * Fetches property details from the API
-   */
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [modalError, setModalError] = useState('');
+  const [formData, setFormData] = useState({
+    Name: '',
+    Description: '',
+    Location: '',
+    Email: '',
+    PhoneNumber: '',
+  });
+
   useEffect(() => {
     const fetchPropertyDetails = async () => {
       try {
         setLoading(true);
-        
         const response = await fetch(`http://localhost:5000/hotels/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch property details');
         }
-        
         const result = await response.json();
         if (!result.success) {
           throw new Error(result.error || 'Failed to load property details');
         }
-        
         setProperty(result.data);
       } catch (err) {
         setError('Failed to load property details');
@@ -339,32 +356,80 @@ const PropertyDetails = () => {
         setLoading(false);
       }
     };
-    
     fetchPropertyDetails();
   }, [id]);
-  
-  /**
-   * Changes active tab
-   * @param {string} tabId - Identifier for the tab to display
-   */
+
+  const openModal = () => {
+    setFormData({
+      Name: property.name,
+      Description: property.description || '',
+      Location: property.location,
+      Email: property.email,
+      PhoneNumber: property.phoneNumber,
+    });
+    setIsModalOpen(true);
+    setModalError('');
+    setSuccessMessage('');
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalError('');
+    setSuccessMessage('');
+  };
+
+  const handleUpdate = async (updatedProperty) => {
+    try {
+      const response = await fetch(`http://localhost:5000/hotels/${updatedProperty.hotelId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          Name: updatedProperty.Name,
+          Description: updatedProperty.Description,
+          Location: updatedProperty.Location,
+          Email: updatedProperty.Email,
+          PhoneNumber: updatedProperty.PhoneNumber,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setProperty({ ...property, ...data.data });
+        setSuccessMessage('Property updated successfully');
+        setTimeout(() => {
+          closeModal();
+          setSuccessMessage('');
+        }, 3000);
+      } else {
+        setModalError(data.error || 'Failed to update property');
+      }
+    } catch (err) {
+      setModalError(`Network error: ${err.message}`);
+    }
+  };
+
+  const handleFormChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleUpdate({
+      hotelId: property.hotelId,
+      ...formData,
+    });
+  };
+
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
   };
-  
-  /**
-   * Formats currency values with proper separators
-   * @param {number} value - Numeric value to format
-   * @returns {string} Formatted currency string
-   */
+
   const formatCurrency = (value) => {
     return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
-  
-  /**
-   * Formats date for display
-   * @param {string} dateString - ISO date string
-   * @returns {string} Formatted date
-   */
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -374,11 +439,6 @@ const PropertyDetails = () => {
     });
   };
 
-  /**
-   * Formats time for display
-   * @param {string} dateString - ISO date string
-   * @returns {string} Formatted time
-   */
   const formatTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
@@ -387,9 +447,6 @@ const PropertyDetails = () => {
     });
   };
 
-  /**
-   * Refreshes property data after a CRUD operation
-   */
   const refreshPropertyData = async () => {
     try {
       const response = await fetch(`http://localhost:5000/hotels/${id}`);
@@ -408,9 +465,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles creating a new issue
-   */
   const handleCreateTask = async () => {
     const description = prompt("Enter issue description:");
     const priority = prompt("Enter priority (High/Medium/Low):");
@@ -442,11 +496,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles updating an issue
-   * @param {string} roomNumber - Room number of the issue
-   * @param {string} issueId - ID of the issue to update
-   */
   const handleUpdateIssue = async (roomNumber, issueId) => {
     const newStatus = prompt('Enter new status (Pending/in-progress/Resolved):');
     if (newStatus) {
@@ -471,11 +520,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles deleting an issue
-   * @param {string} roomNumber - Room number of the issue
-   * @param {string} issueId - ID of the issue to delete
-   */
   const handleDeleteIssue = async (roomNumber, issueId) => {
     if (window.confirm('Are you sure you want to delete this issue?')) {
       try {
@@ -497,11 +541,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles deleting an activity
-   * @param {string} roomNumber - Room number of the activity
-   * @param {string} activityId - ID of the activity to delete
-   */
   const handleDeleteActivity = async (roomNumber, activityId) => {
     if (window.confirm('Are you sure you want to delete this activity?')) {
       try {
@@ -523,9 +562,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles adding new equipment
-   */
   const handleAddEquipment = async () => {
     const roomNumber = prompt('Enter room number:');
     const name = prompt('Enter equipment name:');
@@ -552,11 +588,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles updating equipment
-   * @param {string} roomNumber - Room number of the equipment
-   * @param {string} equipmentId - ID of the equipment to update
-   */
   const handleUpdateEquipment = async (roomNumber, equipmentId) => {
     const newStatus = prompt('Enter new status (Operational/Needs Repair):');
     if (newStatus) {
@@ -581,11 +612,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Handles deleting equipment
-   * @param {string} roomNumber - Room number of the equipment
-   * @param {string} equipmentId - ID of the equipment to delete
-   */
   const handleDeleteEquipment = async (roomNumber, equipmentId) => {
     if (window.confirm('Are you sure you want to delete this equipment?')) {
       try {
@@ -607,9 +633,6 @@ const PropertyDetails = () => {
     }
   };
 
-  /**
-   * Renders view based on loading/error state
-   */
   if (loading) {
     return (
       <div style={styles.loadingContainer}>
@@ -635,17 +658,11 @@ const PropertyDetails = () => {
       </div>
     );
   }
-  
-  /**
-   * Renders the Overview tab content with key metrics and room equipment
-   * @returns {JSX.Element} Overview dashboard
-   */
-  const renderOverviewTab = () => {
-    const averageStay = '3.2 days'; // Placeholder, compute if needed
 
+  const renderOverviewTab = () => {
+    const averageStay = '3.2 days';
     return (
       <div>
-        {/* Key Metrics */}
         <div style={styles.metricsGrid}>
           <Card style={styles.metricCard}>
             <h3 style={styles.metricTitle}>Occupancy Rate</h3>
@@ -654,58 +671,42 @@ const PropertyDetails = () => {
               {property.roomStatistics.occupiedRooms} of {property.roomStatistics.totalRooms} rooms
             </p>
           </Card>
-          
           <Card style={styles.metricCard}>
             <h3 style={styles.metricTitle}>Daily Revenue</h3>
             <p style={styles.metricValue}>{formatCurrency(property.roomStatistics.dailyRevenue)}</p>
             <p style={styles.metricSubtext}>Average stay: {averageStay}</p>
           </Card>
         </div>
-        
-        {/* Room Status Summary */}
         <Card style={styles.roomStatusCard}>
           <h3 style={styles.roomStatusTitle}>Room Status</h3>
-          
           <div style={styles.roomStatusGrid}>
             <div style={styles.statusBox}>
               <p style={styles.statusValue}>{property.roomStatistics.occupiedRooms}</p>
               <p style={styles.statusLabel}>Occupied</p>
             </div>
-            
             <div style={styles.statusBox}>
               <p style={styles.statusValue}>{property.roomStatistics.availableRooms}</p>
               <p style={styles.statusLabel}>Available</p>
             </div>
-
             <div style={styles.statusBox}>
               <p style={styles.statusValue}>{property.roomStatistics.needsCleaning}</p>
               <p style={styles.statusLabel}>Needs Cleaning</p>
             </div>
-
             <div style={styles.statusBox}>
               <p style={styles.statusValue}>{property.roomStatistics.maintenance}</p>
               <p style={styles.statusLabel}>Maintenance</p>
             </div>
           </div>
-
-
-          
           <Link to={`/properties/${property.hotelId}/rooms`}>
             <Button variant="outline" style={styles.viewRoomButton}>
               View All Rooms
             </Button>
           </Link>
         </Card>
-
-        
       </div>
     );
   };
 
-  /**
-   * Renders the Issue tab content with active issues
-   * @returns {JSX.Element} Issue dashboard
-   */
   const renderIssueTab = () => {
     return (
       <div>
@@ -718,9 +719,7 @@ const PropertyDetails = () => {
                   <span style={styles.issueRoom}>Room {issue.roomNumber}</span>
                 </div>
                 <p style={styles.issueDescription}>{issue.Description}</p>
-                
                 <StatusBadge status={issue.Status.toLowerCase()} />
-                
                 <div style={styles.issueFooter}>
                   <span style={styles.issueDate}>
                     Reported {formatDate(issue.ReportedAt)}
@@ -729,7 +728,6 @@ const PropertyDetails = () => {
                     <Button
                       variant="text"
                       onClick={() => handleDeleteIssue(issue.roomNumber, issue.id)}
-      
                     >
                       Delete
                     </Button>
@@ -739,14 +737,7 @@ const PropertyDetails = () => {
             </Card>
           ))
         ) : (
-          <p
-            style={{
-              textAlign: 'center',
-              padding: '8px 0',
-              color: '#999',
-              fontSize: '14px',
-            }}
-          >
+          <p style={{ textAlign: 'center', padding: '8px 0', color: '#999', fontSize: '14px' }}>
             No active issues
           </p>
         )}
@@ -754,10 +745,6 @@ const PropertyDetails = () => {
     );
   };
 
-  /**
-   * Renders the Activity tab content with recent activities
-   * @returns {JSX.Element} Activity dashboard
-   */
   const renderActivityTab = () => {
     return (
       <div>
@@ -777,9 +764,7 @@ const PropertyDetails = () => {
                   {hasPermission('canManageProperties') && (
                     <Button
                       variant="text"
-                      onClick={() =>
-                        handleDeleteActivity(activity.roomNumber, activity.id)
-                      }
+                      onClick={() => handleDeleteActivity(activity.roomNumber, activity.id)}
                     >
                       Delete
                     </Button>
@@ -789,14 +774,7 @@ const PropertyDetails = () => {
             </Card>
           ))
         ) : (
-          <p
-            style={{
-              textAlign: 'center',
-              padding: '8px 0',
-              color: '#999',
-              fontSize: '14px',
-            }}
-          >
+          <p style={{ textAlign: 'center', padding: '8px 0', color: '#999', fontSize: '14px' }}>
             No recent activity
           </p>
         )}
@@ -804,22 +782,15 @@ const PropertyDetails = () => {
     );
   };
 
-  /**
-   * Renders the Financial tab content (placeholder)
-   * @returns {JSX.Element} Financial dashboard
-   */
   const renderFinancialTab = () => {
     return (
       <div>
-        {/* Property Performance */}
         <Card style={styles.sectionCard}>
           <h3 style={styles.sectionTitle}>Property Performance</h3>
           <div style={styles.metricsGrid}>
             <div style={styles.metricCard}>
               <h4 style={styles.metricTitle}>Occupancy Rate</h4>
-              <p style={styles.metricValue}>
-                {property.roomStatistics.occupancyRate}%
-              </p>
+              <p style={styles.metricValue}>{property.roomStatistics.occupancyRate}%</p>
             </div>
             <div style={styles.metricCard}>
               <h4 style={styles.metricTitle}>Avg. Rating</h4>
@@ -846,8 +817,6 @@ const PropertyDetails = () => {
             </div>
           </div>
         </Card>
-  
-        {/* Revenue Overview */}
         <Card style={styles.sectionCard}>
           <h3 style={styles.sectionTitle}>Revenue Overview</h3>
           <div style={styles.metricsGrid}>
@@ -886,7 +855,6 @@ const PropertyDetails = () => {
 
   return (
     <div style={styles.pageContainer}>
-      {/* Property Header */}
       <div style={styles.headerContainer}>
         <button 
           style={styles.backButton}
@@ -897,22 +865,16 @@ const PropertyDetails = () => {
         >
           ←
         </button>
-        
-      <h1 style={styles.headerTitle}>{property.name}</h1>
+        <h1 style={styles.headerTitle}>{property.name}</h1>
       </div>
       
-      {/* Property Information in Card */}
       <Card style={styles.detailsCard}>
-        
         <div style={styles.detailsLeft}>
           <p style={styles.addressText}>Location: {property.location}</p>
           <p style={styles.addressText}>Email: {property.email}</p>
           <p style={styles.addressText}>Contact Number:{property.phoneNumber}</p>
-
           <div style={styles.statusContainer}>
-            <h3 
-              status={property.status === 'Active' ? 'active' : 'pending'}
-            >
+            <h3 status={property.status === 'Active' ? 'active' : 'pending'}>
               {property.status}
             </h3>
             <p style={styles.roomCountText}>
@@ -921,17 +883,16 @@ const PropertyDetails = () => {
           </div>
         </div>
         {hasPermission('canManageProperties') && (
-            <Button
-              variant="outline"
-              style={styles.editButton}
-            >
-              Edit Property
-            </Button>
-          
+          <Button
+            variant="outline"
+            style={styles.editButton}
+            onClick={openModal}
+          >
+            Edit Property
+          </Button>
         )}
       </Card>
       
-      {/* Tab Navigation */}
       <div style={styles.tabContainer}>
         {['overview', 'issue', 'activity', 'financial'].map((tab) => (
           <button
@@ -949,11 +910,88 @@ const PropertyDetails = () => {
         ))}
       </div>
       
-      {/* Tab Content */}
       {activeTab === 'overview' && renderOverviewTab()}
       {activeTab === 'issue' && renderIssueTab()}
       {activeTab === 'activity' && renderActivityTab()}
       {activeTab === 'financial' && renderFinancialTab()}
+
+      {isModalOpen && (
+        <div style={styles.modalOverlay} onClick={closeModal}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={styles.modalHeader}>Edit Property</h2>
+            <form onSubmit={handleSubmit}>
+              <div style={styles.formField}>
+                <input
+                  style={styles.input}
+                  type="text"
+                  name="Name"
+                  value={formData.Name}
+                  onChange={handleFormChange}
+                  placeholder="Property Name"
+                  required
+                />
+              </div>
+              <div style={styles.formField}>
+                <input
+                  style={styles.input}
+                  type="text"
+                  name="Description"
+                  value={formData.Description}
+                  onChange={handleFormChange}
+                  placeholder="Description"
+                />
+              </div>
+              <div style={styles.formField}>
+                <input
+                  style={styles.input}
+                  type="text"
+                  name="Location"
+                  value={formData.Location}
+                  onChange={handleFormChange}
+                  placeholder="Location"
+                  required
+                />
+              </div>
+              <div style={styles.formField}>
+                <input
+                  style={styles.input}
+                  type="email"
+                  name="Email"
+                  value={formData.Email}
+                  onChange={handleFormChange}
+                  placeholder="Email"
+                  required
+                />
+              </div>
+              <div style={styles.formField}>
+                <input
+                  style={styles.input}
+                  type="tel"
+                  name="PhoneNumber"
+                  value={formData.PhoneNumber}
+                  onChange={handleFormChange}
+                  placeholder="Phone Number"
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <Button variant="outline" onClick={closeModal}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              </div>
+              {successMessage && (
+                <p style={styles.successMessage}>{successMessage}</p>
+              )}
+              {modalError && (
+                <p style={styles.errorMessage}>{modalError}</p>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -124,7 +124,7 @@ const CreateProperty = () => {
                     phoneNumber: '',
                     roomTypes: [{ Type: '', PriceByHour: '', PriceBySection: '', PriceByNight: '' }],
                 });
-                setTimeout(() => navigate('/dashboard'), 1000);
+                setTimeout(() => navigate('/properties'), 1000);
             } else {
                 setError(data.error || 'Failed to create property');
             }
