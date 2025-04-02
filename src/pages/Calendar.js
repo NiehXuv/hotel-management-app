@@ -21,6 +21,9 @@ const Calendar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
   const [selectedBookingStatus, setSelectedBookingStatus] = useState('');
+  const [optimalPriceData, setOptimalPriceData] = useState(null); // State for optimal price
+  const [priceLoading, setPriceLoading] = useState(false); // State to handle loading state of price fetch
+  const [priceError, setPriceError] = useState(''); // State to handle errors in price fetch
 
   const navigate = useNavigate();
   const touchStartX = useRef(null);
@@ -44,6 +47,13 @@ const Calendar = () => {
       setRooms(allRooms);
     }
   }, [selectedHotel, allRooms]);
+
+  // Fetch optimal price when a booking is selected and modal is shown
+  useEffect(() => {
+    if (showModal && selectedBookings.length > 0) {
+      fetchOptimalPrice(selectedBookings[0].id);
+    }
+  }, [showModal, selectedBookings]);
 
   const fetchBookings = async () => {
     try {
@@ -121,6 +131,31 @@ const Calendar = () => {
     }
   };
 
+  // Function to fetch optimal price for a booking
+  const fetchOptimalPrice = async (bookingId) => {
+    setPriceLoading(true);
+    setPriceError('');
+    setOptimalPriceData(null);
+    try {
+      const response = await fetch(`http://localhost:5000/booking/${bookingId}/optimal-price`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to fetch optimal price');
+      const data = await response.json();
+      if (data.success) {
+        setOptimalPriceData(data.data);
+      } else {
+        setPriceError(`Failed to load optimal price: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      setPriceError(`Error fetching optimal price: ${err.message}`);
+      console.error('Fetch optimal price error:', err);
+    } finally {
+      setPriceLoading(false);
+    }
+  };
+
   const hotelMap = useMemo(() => {
     return hotels.reduce((map, hotel) => {
       map[hotel.id] = hotel.name;
@@ -143,15 +178,16 @@ const Calendar = () => {
     return roomMap[key] || `Room ${roomId}`;
   };
 
-  const getBookingsForDate = (date) => {
+  const getBookingsForDate = (date, type) => {
     return bookings.filter((booking) => {
-      if (!booking.bookIn) {
-        console.warn(`Booking ${booking.id} has no bookIn date`);
+      const dateField = type === 'checkin' ? booking.bookIn : booking.bookOut;
+      if (!dateField) {
+        console.warn(`Booking ${booking.id} has no ${type} date`);
         return false;
       }
-      const bookingDate = new Date(booking.bookIn);
+      const bookingDate = new Date(dateField);
       if (isNaN(bookingDate)) {
-        console.warn(`Booking ${booking.id} has invalid bookIn date: ${booking.bookIn}`);
+        console.warn(`Booking ${booking.id} has invalid ${type} date: ${dateField}`);
         return false;
       }
       const dateMatch = bookingDate.toDateString() === date.toDateString();
@@ -203,7 +239,10 @@ const Calendar = () => {
   };
 
   const generateBookedTimeSlots = () => {
-    const bookedSlots = getBookingsForDate(currentDate).map((booking) => {
+    const checkinBookings = getBookingsForDate(currentDate, 'checkin');
+    const checkoutBookings = getBookingsForDate(currentDate, 'checkout');
+
+    const checkinSlots = checkinBookings.map((booking) => {
       if (!booking.eta || !booking.eta.includes(':')) {
         console.warn(`Booking ${booking.id} has invalid eta: ${booking.eta}`);
         return null;
@@ -227,18 +266,55 @@ const Calendar = () => {
       const displayHour = startHour <= 12 ? startHour : startHour - 12;
       const time = `${displayHour.toString().padStart(2, '0')}:00 ${period}`;
       return {
-        id: booking.id || `${startTime}-${booking.customerId}`,
+        id: `checkin-${booking.id || `${startTime}-${booking.customerId}`}`,
         booking,
         startTotalMinutes,
         startHour,
         time,
         color,
+        type: 'checkin',
       };
     }).filter(slot => slot !== null);
 
-    console.log('Booked slots:', bookedSlots);
+    const checkoutSlots = checkoutBookings.map((booking) => {
+      if (!booking.etd || !booking.etd.includes(':')) {
+        console.warn(`Booking ${booking.id} has invalid etd: ${booking.etd}`);
+        return null;
+      }
+      const endTime = booking.etd;
+      const [hourStr, minuteStr] = endTime.split(':');
+      const endHour = parseInt(hourStr, 10);
+      const endMinute = parseInt(minuteStr, 10);
+      if (isNaN(endHour) || isNaN(endMinute)) {
+        console.warn(`Booking ${booking.id} has invalid etd format: ${booking.etd}`);
+        return null;
+      }
+      const endTotalMinutes = endHour * 60 + endMinute;
+      const color =
+        booking.paymentStatus === 'Paid'
+          ? '#FFB6C1'
+          : booking.paymentStatus === 'Unpaid'
+          ? '#FFA07A'
+          : '#F0E68C';
+      const period = endHour < 12 ? 'am' : 'pm';
+      const displayHour = endHour <= 12 ? endHour : endHour - 12;
+      const time = `${displayHour.toString().padStart(2, '0')}:00 ${period}`;
+      return {
+        id: `checkout-${booking.id || `${endTime}-${booking.customerId}`}`,
+        booking,
+        startTotalMinutes: endTotalMinutes,
+        startHour: endHour,
+        time,
+        color,
+        type: 'checkout',
+      };
+    }).filter(slot => slot !== null);
 
-    const timeSlotMap = bookedSlots.reduce((map, slot) => {
+    const allSlots = [...checkinSlots, ...checkoutSlots];
+
+    console.log('All slots:', allSlots);
+
+    const timeSlotMap = allSlots.reduce((map, slot) => {
       const { time } = slot;
       if (!map[time]) {
         map[time] = [];
@@ -262,6 +338,8 @@ const Calendar = () => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedBookings([]);
+    setOptimalPriceData(null); // Reset optimal price data when closing modal
+    setPriceError('');
   };
 
   const handleTouchStart = (e) => {
@@ -337,102 +415,102 @@ const Calendar = () => {
         />
       </div>
 
-        <button
-          style={{
-            ...styles.filterButton,
-            backgroundColor: showFilter ? '#ADD8E6' : '#fff',
-          }}
-          onClick={() => setShowFilter(!showFilter)}
-        >
-          Filter {showFilter ? '▲' : '▼'}
-        </button>
-        {showFilter && (
-          <div style={styles.filterContent}>
-            <div style={styles.filterContainer}>
-              <label htmlFor="hotelFilter" style={styles.label}>
-                By Hotel
-              </label>
-              <select
-                id="hotelFilter"
-                value={selectedHotel}
-                onChange={(e) => {
-                  setSelectedHotel(e.target.value);
-                  setSelectedRoom('');
-                }}
-                disabled={loadingHotels}
-                style={{ borderRadius: '1em', padding: '0.5em' }}
-              >
-                <option value="">All Hotels</option>
-                {hotels
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((hotel) => (
-                    <option key={hotel.id} value={hotel.id}>
-                      {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
-                    </option>
-                  ))}
-              </select>
-              {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
-              {error && <p style={styles.errorText}>{error}</p>}
-            </div>
-            <div style={styles.filterContainer}>
-              <label htmlFor="roomFilter" style={styles.label}>
-                By Room
-              </label>
-              <select
-                id="roomFilter"
-                value={selectedRoom}
-                onChange={(e) => setSelectedRoom(e.target.value)}
-                disabled={!selectedHotel || loadingRooms}
-                style={{ borderRadius: '1em', padding: '0.5em' }}
-              >
-                <option value="">All Rooms</option>
-                {rooms
-                  .sort((a, b) => a.RoomName.localeCompare(b.RoomName))
-                  .map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.RoomName.charAt(0).toUpperCase() + room.RoomName.slice(1)}
-                    </option>
-                  ))}
-              </select>
-              {loadingRooms && <p style={styles.loadingText}>Loading rooms...</p>}
-              {roomError && <p style={styles.errorText}>{roomError}</p>}
-            </div>
-            <div style={styles.filterContainer}>
-              <label htmlFor="paymentStatusFilter" style={styles.label}>
-                By Payment Status
-              </label>
-              <select
-                id="paymentStatusFilter"
-                value={selectedPaymentStatus}
-                onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-                style={{ borderRadius: '1em', padding: '0.5em' }}
-              >
-                <option value="">All Payment Statuses</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-              </select>
-            </div>
-            <div style={styles.filterContainer}>
-              <label htmlFor="bookingStatusFilter" style={styles.label}>
-                By Booking Status
-              </label>
-              <select
-                id="bookingStatusFilter"
-                value={selectedBookingStatus}
-                onChange={(e) => setSelectedBookingStatus(e.target.value)}
-                style={{ borderRadius: '1em', padding: '0.5em' }}
-              >
-                <option value="">All Booking Statuses</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Pending">Pending</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
+      <button
+        style={{
+          ...styles.filterButton,
+          backgroundColor: showFilter ? '#ADD8E6' : '#fff',
+        }}
+        onClick={() => setShowFilter(!showFilter)}
+      >
+        Filter {showFilter ? '▲' : '▼'}
+      </button>
+      {showFilter && (
+        <div style={styles.filterContent}>
+          <div style={styles.filterContainer}>
+            <label htmlFor="hotelFilter" style={styles.label}>
+              By Hotel
+            </label>
+            <select
+              id="hotelFilter"
+              value={selectedHotel}
+              onChange={(e) => {
+                setSelectedHotel(e.target.value);
+                setSelectedRoom('');
+              }}
+              disabled={loadingHotels}
+              style={{ borderRadius: '1em', padding: '0.5em' }}
+            >
+              <option value="">All Hotels</option>
+              {hotels
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((hotel) => (
+                  <option key={hotel.id} value={hotel.id}>
+                    {hotel.name.charAt(0).toUpperCase() + hotel.name.slice(1)}
+                  </option>
+                ))}
+            </select>
+            {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
+            {error && <p style={styles.errorText}>{error}</p>}
           </div>
-        )}
+          <div style={styles.filterContainer}>
+            <label htmlFor="roomFilter" style={styles.label}>
+              By Room
+            </label>
+            <select
+              id="roomFilter"
+              value={selectedRoom}
+              onChange={(e) => setSelectedRoom(e.target.value)}
+              disabled={!selectedHotel || loadingRooms}
+              style={{ borderRadius: '1em', padding: '0.5em' }}
+            >
+              <option value="">All Rooms</option>
+              {rooms
+                .sort((a, b) => a.RoomName.localeCompare(b.RoomName))
+                .map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.RoomName.charAt(0).toUpperCase() + room.RoomName.slice(1)}
+                  </option>
+                ))}
+            </select>
+            {loadingRooms && <p style={styles.loadingText}>Loading rooms...</p>}
+            {roomError && <p style={styles.errorText}>{roomError}</p>}
+          </div>
+          <div style={styles.filterContainer}>
+            <label htmlFor="paymentStatusFilter" style={styles.label}>
+              By Payment Status
+            </label>
+            <select
+              id="paymentStatusFilter"
+              value={selectedPaymentStatus}
+              onChange={(e) => setSelectedPaymentStatus(e.target.value)}
+              style={{ borderRadius: '1em', padding: '0.5em' }}
+            >
+              <option value="">All Payment Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+            </select>
+          </div>
+          <div style={styles.filterContainer}>
+            <label htmlFor="bookingStatusFilter" style={styles.label}>
+              By Booking Status
+            </label>
+            <select
+              id="bookingStatusFilter"
+              value={selectedBookingStatus}
+              onChange={(e) => setSelectedBookingStatus(e.target.value)}
+              style={{ borderRadius: '1em', padding: '0.5em' }}
+            >
+              <option value="">All Booking Statuses</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {bookedTimes.length === 0 && (
-        <p style={styles.noBooking}>No bookings for this day.</p>
+        <p style={styles.noBooking}>No check-ins or check-outs for this day.</p>
       )}
 
       <Card className="schedule-view-card" style={styles.scheduleCard}>
@@ -445,26 +523,55 @@ const Calendar = () => {
                   <span style={styles.timeLabel}>{time}</span>
                   <div style={styles.timeSlotWrapper}>
                     {slotsInHour.map((slot) => (
-                      <div
-                        key={slot.id}
-                        style={{
-                          ...styles.bookingCard,
-                          backgroundColor: slot.color,
-                        }}
-                        onClick={() => handleTimeSlotClick(slot.booking)}
-                      >
-                        <div style={styles.bookingDetailsLeft}>
-                          <div style={styles.hotelName}>
-                            {getHotelNameById(slot.booking.hotelId)}
+                      slot.type === 'checkin' ? (
+                        <div
+                          key={slot.id}
+                          style={{
+                            ...styles.checkinCard,
+                            backgroundColor: slot.color,
+                          }}
+                          onClick={() => handleTimeSlotClick(slot.booking)}
+                        >
+                          <div style={styles.bookingDetailsLeft}>
+                            <div style={styles.hotelName}>
+                              {getHotelNameById(slot.booking.hotelId)}
+                            </div>
+                            <div style={styles.roomName}>
+                              {getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}
+                            </div>
                           </div>
-                          <div style={styles.roomName}>
-                            {getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}
+                          <div style={styles.customerDetails}>
+                            <div style={styles.customerName}>
+                              {slot.booking.customerId}
+                            </div>
+                            <div style={styles.checkLabel}>Check-in</div>
                           </div>
                         </div>
-                        <div style={styles.customerName}>
-                          {slot.booking.customerId}
+                      ) : (
+                        <div
+                          key={slot.id}
+                          style={{
+                            ...styles.checkoutCard,
+                            backgroundColor: slot.color,
+                          }}
+                          onClick={() => handleTimeSlotClick(slot.booking)}
+                        >
+                          <div style={styles.bookingDetailsLeft}>
+                            <div style={styles.hotelName}>
+                              {getHotelNameById(slot.booking.hotelId)}
+                            </div>
+                            <div style={styles.roomName}>
+                              {getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}
+                            </div>
+                          </div>
+                          <div style={styles.customerDetails}>
+                            <div style={styles.customerName}>
+                              {slot.booking.customerId}
+                            </div>
+                            <div style={styles.checkLabel}>Check-out</div>
+                          </div>
                         </div>
-                      </div>
+                      )
                     ))}
                   </div>
                 </div>
@@ -497,6 +604,24 @@ const Calendar = () => {
                     <p>ETD: {booking.etd}</p>
                     <p>Payment Status: {booking.paymentStatus}</p>
                     <p>Booking Status: {booking.bookingStatus}</p>
+                    {/* Display Optimal Price in a colored Card */}
+                    {priceLoading && <p style={styles.loadingText}>Loading optimal price...</p>}
+                    {priceError && <p style={styles.errorText}>{priceError}</p>}
+                    {optimalPriceData && (
+                      <Card
+                        style={{
+                          backgroundColor: '#E0F2F1', // Light teal background for emphasis
+                          borderRadius: '2em',
+                          padding: '0.5em',
+                          marginTop: '0.5em',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        }}
+                      >
+                        <p style={{ fontWeight: 'bold' }}>
+                          Optimal Price: ${optimalPriceData.optimalPrice} 
+                        </p>
+                      </Card>
+                    )}
                   </div>
                 ))}
               </>
@@ -633,13 +758,29 @@ const styles = {
     flex: 1,
     overflowX: 'hidden',
   },
-  bookingCard: {
+  checkinCard: {
     width: '100%',
-    minHeight: '4em', // Reduced height to match image
+    minHeight: '4em',
     margin: '5px 0',
     padding: '0.8em',
     border: '1px solid rgb(211, 214, 218)',
-    borderRadius: '1em', // Slightly smaller border radius
+    borderRadius: '1em',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: '14px',
+    color: '#000',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    cursor: 'pointer',
+  },
+  checkoutCard: {
+    width: '100%',
+    minHeight: '4em',
+    margin: '5px 0',
+    padding: '0.8em',
+    border: '1px solid rgb(211, 214, 218)',
+    borderRadius: '1em',
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -719,7 +860,6 @@ const styles = {
     borderRadius: '2em',
     fontSize: '16px',
     cursor: 'pointer',
-    textAlign: 'center',
   },
   filterContainer: {
     display: 'flex',
@@ -738,6 +878,11 @@ const styles = {
   errorText: {
     fontSize: '0.8rem',
     color: '#dc2626',
+  },
+  checkLabel: {
+    fontSize: '10px',
+    color: '#777',
+    textAlign: 'right',
   },
 };
 
