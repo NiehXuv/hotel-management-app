@@ -141,8 +141,13 @@ const CreateProperty = () => {
             <style>
                 {`
                     .container {
-                        max-width: 700px;
-                        margin: 24px auto;
+                        width: 100vw;
+                        max-width: 480px;
+                        margin: 0 auto;
+                        padding: 2rem;
+                        padding-bottom: calc(1rem + var(--footer-height));
+                        min-height: 100vh;
+                        box-sizing: border-box;
                     }
 
                     .form {
@@ -159,13 +164,18 @@ const CreateProperty = () => {
 
                     .room-type-row {
                         display: grid;
-                        grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+                        grid-template-columns: 1fr 1fr 1fr 1fr 60px;
                         align-items: center;
-                        gap: 12px;
+                        gap: 6px;
                     }
 
                     .room-type-input {
                         min-width: 0;
+                        font-size: 12px;
+                    }
+
+                    .room-type-input::placeholder {
+                        font-size: 12px;
                     }
 
                     .add-room-type-btn,
@@ -175,7 +185,7 @@ const CreateProperty = () => {
                         border: none;
                         border-radius: 4px;
                         cursor: pointer;
-                        font-size: 14px;
+                        font-size: 13px;
                         transition: background-color 0.2s;
                     }
 
@@ -191,6 +201,9 @@ const CreateProperty = () => {
                     .remove-room-type-btn {
                         background-color: #dc3545;
                         color: white;
+                        display: flex; /* Added to center text */
+                        justify-content: center; /* Center horizontally */
+                        align-items: center; /* Center vertically */
                     }
 
                     .remove-room-type-btn:hover {
@@ -216,19 +229,43 @@ const CreateProperty = () => {
                     .success-message {
                         color: #28a745;
                         margin-top: 12px;
+                        text-align: center;
                     }
 
                     .error-message {
                         color: #dc3545;
                         margin-top: 12px;
+                        text-align: center;
                     }
 
                     .label {
                         display: block;
-                        font-size: 14px;
+                        font-size: 13px;
                         font-weight: 500;
                         color: #333;
                         margin-bottom: 4px;
+                    }
+
+                    @media (max-width: 480px) {
+                        .room-type-row {
+                            grid-template-columns: 1fr;
+                            gap: 12px;
+                        }
+                        
+                        .remove-room-type-btn {
+                            width: 100%;
+                            display: flex; /* Ensure centering on mobile */
+                            justify-content: center;
+                            align-items: center;
+                        }
+
+                        .room-type-input {
+                            font-size: 14px;
+                        }
+
+                        .room-type-input::placeholder {
+                            font-size: 14px;
+                        }
                     }
                 `}
             </style>
