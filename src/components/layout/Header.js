@@ -29,7 +29,7 @@ const Header = () => {
     closeMenu();
   };
 
-  //mapping backback
+  //mapping back
   // const parentMap = {
   //   '/properties': '/dashboard',
   //   '/reports' :'/dashboard',
