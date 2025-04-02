@@ -21,9 +21,9 @@ const Calendar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('');
   const [selectedBookingStatus, setSelectedBookingStatus] = useState('');
-  const [optimalPriceData, setOptimalPriceData] = useState(null); // State for optimal price
-  const [priceLoading, setPriceLoading] = useState(false); // State to handle loading state of price fetch
-  const [priceError, setPriceError] = useState(''); // State to handle errors in price fetch
+  const [optimalPriceData, setOptimalPriceData] = useState(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+  const [priceError, setPriceError] = useState('');
 
   const navigate = useNavigate();
   const touchStartX = useRef(null);
@@ -48,7 +48,6 @@ const Calendar = () => {
     }
   }, [selectedHotel, allRooms]);
 
-  // Fetch optimal price when a booking is selected and modal is shown
   useEffect(() => {
     if (showModal && selectedBookings.length > 0) {
       fetchOptimalPrice(selectedBookings[0].id);
@@ -131,7 +130,6 @@ const Calendar = () => {
     }
   };
 
-  // Function to fetch optimal price for a booking
   const fetchOptimalPrice = async (bookingId) => {
     setPriceLoading(true);
     setPriceError('');
@@ -338,7 +336,7 @@ const Calendar = () => {
   const closeModal = () => {
     setShowModal(false);
     setSelectedBookings([]);
-    setOptimalPriceData(null); // Reset optimal price data when closing modal
+    setOptimalPriceData(null);
     setPriceError('');
   };
 
@@ -610,14 +608,14 @@ const Calendar = () => {
                     {optimalPriceData && (
                       <Card
                         style={{
-                          backgroundColor: '#E0F2F1', // Light teal background for emphasis
-                          borderRadius: '2em',
+                          backgroundColor: '#E0F7FA', // Light cyan background for the card
+                          borderRadius: '1em',
                           padding: '0.5em',
                           marginTop: '0.5em',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          textAlign: 'center',
                         }}
                       >
-                        <p style={{ fontWeight: 'bold' }}>
+                        <p style={{ margin: 0, fontWeight: 'bold', color: '#00796B' }}>
                           Optimal Price: ${optimalPriceData.optimalPrice} 
                         </p>
                       </Card>
