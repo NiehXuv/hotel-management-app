@@ -1,78 +1,126 @@
 const { database } = require("../config/firebaseconfig");
 const { ref, set, get } = require("firebase/database");
 
-const showRoom = async (req, res) => {
+const createRoom = async (req, res) => {
     try {
-        const { hotelId, roomId } = req.params;
+        const { hotelId } = req.params;
+        const { 
+            RoomType = '', 
+            RoomName = '', 
+            Description = '', 
+            PriceByHour = 0, 
+            PriceByNight = 0, 
+            PriceBySection = 0, 
+            RoomNumber,
+            Floor // New field for floor number
+        } = req.body;
 
         // Validation
-        if (!hotelId || !roomId) {
-            return res.status(400).json({
+        if (!hotelId || !RoomNumber || !RoomType || !RoomName || !Description) {
+            return res.status(400).json({ 
                 success: false,
-                error: 'Hotel ID and Room ID are required'
+                error: 'Hotel ID, Room Number, Room Type, Room Name, and Description are required' 
             });
         }
 
-        // Check if hotel exists
+        if (!Floor) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Floor number is required' 
+            });
+        }
+
+        if (RoomType.trim().length < 2) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Room Type must be at least 2 characters' 
+            });
+        }
+        if (RoomName.trim().length < 2) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Room Name must be at least 2 characters' 
+            });
+        }
+        if (Description.trim().length < 10) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Description must be at least 10 characters' 
+            });
+        }
+
         const hotelRef = ref(database, `Hotel/${hotelId}`);
         const hotelSnapshot = await get(hotelRef);
         if (!hotelSnapshot.exists()) {
-            return res.status(404).json({
+            return res.status(404).json({ 
                 success: false,
-                error: 'Hotel not found'
+                error: 'Hotel not found' 
             });
         }
 
-        // Get specific room
-        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomId}`);
+        // Check if RoomType exists in Hotel's RoomTypes and get prices
+        const roomTypesRef = ref(database, `Hotel/${hotelId}/RoomTypes`);
+        const roomTypesSnapshot = await get(roomTypesRef);
+        let matchedRoomType = null;
+        if (roomTypesSnapshot.exists()) {
+            const roomTypes = roomTypesSnapshot.val();
+            matchedRoomType = Object.values(roomTypes).find(rt => rt.Type === RoomType.trim());
+        }
+
+        if (!matchedRoomType) {
+            return res.status(400).json({
+                success: false,
+                error: `Room Type '${RoomType}' not found in hotel's RoomTypes`
+            });
+        }
+
+        // Use prices from RoomTypes if not provided in request body
+        const finalPriceByHour = PriceByHour !== 0 ? Number(PriceByHour) : matchedRoomType.PriceByHour;
+        const finalPriceByNight = PriceByNight !== 0 ? Number(PriceByNight) : matchedRoomType.PriceByNight;
+        const finalPriceBySection = PriceBySection !== 0 ? Number(PriceBySection) : matchedRoomType.PriceBySection;
+
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${RoomNumber}`);
         const roomSnapshot = await get(roomRef);
-        
-        if (!roomSnapshot.exists()) {
-            return res.status(404).json({
+        if (roomSnapshot.exists()) {
+            return res.status(400).json({ 
                 success: false,
-                error: 'Room not found'
+                error: 'Room number already exists' 
             });
         }
 
-        const roomData = roomSnapshot.val();
-        
-        // Prepare response data
-        const roomResponse = {
-            hotelId,
-            roomId,
-            roomType: roomData.RoomType,
-            roomName: roomData.RoomName,
-            description: roomData.Description,
-            priceByHour: roomData.PriceByHour,
-            priceByNight: roomData.PriceByNight,
-            priceBySection: roomData.PriceBySection,
-            roomNumber: roomData.RoomNumber,
-            status: roomData.Status,
-            createdAt: roomData.CreatedAt,
-            updatedAt: roomData.UpdatedAt
-        };
-
-        return res.status(200).json({
-            success: true,
-            data: roomResponse,
-            message: 'Room retrieved successfully'
+        // Store RoomNumber and Floor as fields in the room data
+        await set(roomRef, {
+            RoomType: RoomType.trim(),
+            RoomName: RoomName.trim(),
+            Description: Description.trim(),
+            PriceByHour: finalPriceByHour,
+            PriceByNight: finalPriceByNight,
+            PriceBySection: finalPriceBySection,
+            RoomNumber: RoomNumber.trim(),
+            Floor: Floor.trim(),
+            Status: 'Available',
+            CreatedAt: new Date().toISOString(),
+            UpdatedAt: new Date().toISOString(),
+            ActivityCounter: 0,
+            IssueCounter: 0,
         });
 
+        return res.status(201).json({
+            success: true,
+            data: { roomId: RoomNumber, hotelId },
+            message: 'Room created successfully'
+        });
     } catch (error) {
-        console.error('Error fetching room:', {
+        console.error('Error creating room:', {
             error: error.message,
             stack: error.stack,
             hotelId: req.params.hotelId,
-            roomId: req.params.roomId
+            roomNumber: req.body.RoomNumber
         });
-        
-        const errorMessage = error.code === 'PERMISSION_DENIED' 
-            ? 'Permission denied' 
-            : 'Internal Server Error';
-            
-        return res.status(500).json({
+        const errorMessage = error.code === 'PERMISSION_DENIED' ? 'Permission denied' : 'Internal Server Error';
+        return res.status(500).json({ 
             success: false,
-            error: errorMessage
+            error: errorMessage 
         });
     }
 };
@@ -161,118 +209,106 @@ const getRoomTypes = async (req, res) => {
     }
 };
 
-const createRoom = async (req, res) => {
+const showRoom = async (req, res) => {
     try {
-        const { hotelId } = req.params;
-        const { 
-            RoomType = '', 
-            RoomName = '', 
-            Description = '', 
-            PriceByHour = 0, 
-            PriceByNight = 0, 
-            PriceBySection = 0, 
-            RoomNumber 
-        } = req.body;
+        const { hotelId, roomId } = req.params;
 
         // Validation
-        if (!hotelId || !RoomNumber || !RoomType || !RoomName || !Description) {
-            return res.status(400).json({ 
+        if (!hotelId || !roomId) {
+            return res.status(400).json({
                 success: false,
-                error: 'Hotel ID, Room Number, Room Type, Room Name, and Description are required' 
+                error: 'Hotel ID and Room ID are required'
             });
         }
 
-        if (RoomType.trim().length < 2) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Room Type must be at least 2 characters' 
-            });
-        }
-        if (RoomName.trim().length < 2) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Room Name must be at least 2 characters' 
-            });
-        }
-        if (Description.trim().length < 10) {
-            return res.status(400).json({ 
-                success: false,
-                error: 'Description must be at least 10 characters' 
-            });
-        }
-
+        // Check if hotel exists
         const hotelRef = ref(database, `Hotel/${hotelId}`);
         const hotelSnapshot = await get(hotelRef);
         if (!hotelSnapshot.exists()) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 success: false,
-                error: 'Hotel not found' 
+                error: 'Hotel not found'
             });
         }
 
-        // Check if RoomType exists in Hotel's RoomTypes and get prices
-        const roomTypesRef = ref(database, `Hotel/${hotelId}/RoomTypes`);
-        const roomTypesSnapshot = await get(roomTypesRef);
-        let matchedRoomType = null;
-        if (roomTypesSnapshot.exists()) {
-            const roomTypes = roomTypesSnapshot.val();
-            matchedRoomType = Object.values(roomTypes).find(rt => rt.Type === RoomType.trim());
-        }
-
-        if (!matchedRoomType) {
-            return res.status(400).json({
-                success: false,
-                error: `Room Type '${RoomType}' not found in hotel's RoomTypes`
-            });
-        }
-
-        // Use prices from RoomTypes if not provided in request body
-        const finalPriceByHour = PriceByHour !== 0 ? Number(PriceByHour) : matchedRoomType.PriceByHour;
-        const finalPriceByNight = PriceByNight !== 0 ? Number(PriceByNight) : matchedRoomType.PriceByNight;
-        const finalPriceBySection = PriceBySection !== 0 ? Number(PriceBySection) : matchedRoomType.PriceBySection;
-
-        const roomRef = ref(database, `Hotel/${hotelId}/Room/${RoomNumber}`);
+        // Get specific room
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomId}`);
         const roomSnapshot = await get(roomRef);
-        if (roomSnapshot.exists()) {
-            return res.status(400).json({ 
+        
+        if (!roomSnapshot.exists()) {
+            return res.status(404).json({
                 success: false,
-                error: 'Room number already exists' 
+                error: 'Room not found'
             });
         }
 
-        // Store RoomNumber as a field in the room data, matching the roomId
-        await set(roomRef, {
-            RoomType: RoomType.trim(),
-            RoomName: RoomName.trim(),
-            Description: Description.trim(),
-            PriceByHour: finalPriceByHour,
-            PriceByNight: finalPriceByNight,
-            PriceBySection: finalPriceBySection,
-            RoomNumber: RoomNumber.trim(), // Explicitly store RoomNumber as a field
-            Status: 'Available',
-            CreatedAt: new Date().toISOString(),
-            UpdatedAt: new Date().toISOString()
+        const roomData = roomSnapshot.val();
+        
+        // Transform activities into an array with ActivityId
+        const activities = roomData.Activity
+            ? Object.entries(roomData.Activity).map(([id, activity]) => ({
+                ActivityId: id,
+                Action: activity.Action,
+                Details: activity.Details,
+                User: activity.User,
+                Timestamp: activity.Timestamp,
+              }))
+            : [];
+
+        // Transform issues into an array with IssueId
+        const issues = roomData.Issue
+            ? Object.entries(roomData.Issue).map(([id, issue]) => ({
+                IssueId: id,
+                Description: issue.Description,
+                Status: issue.Status,
+                ReportedAt: issue.ReportedAt,
+              }))
+            : [];
+
+        // Prepare response data
+        const roomResponse = {
+            hotelId,
+            roomId,
+            roomType: roomData.RoomType,
+            roomName: roomData.RoomName,
+            description: roomData.Description,
+            priceByHour: roomData.PriceByHour,
+            priceByNight: roomData.PriceByNight,
+            priceBySection: roomData.PriceBySection,
+            roomNumber: roomData.RoomNumber,
+            floor: roomData.Floor,
+            status: roomData.Status,
+            createdAt: roomData.CreatedAt,
+            updatedAt: roomData.UpdatedAt,
+            activityCounter: roomData.ActivityCounter || 0,
+            issueCounter: roomData.IssueCounter || 0,
+            activities, // Array of activities with ActivityId
+            issues, // Array of issues with IssueId
+        };
+
+        return res.status(200).json({
+            success: true,
+            data: roomResponse,
+            message: 'Room retrieved successfully'
         });
 
-        return res.status(201).json({
-            success: true,
-            data: { roomId: RoomNumber, hotelId },
-            message: 'Room created successfully'
-        });
     } catch (error) {
-        console.error('Error creating room:', {
+        console.error('Error fetching room:', {
             error: error.message,
             stack: error.stack,
             hotelId: req.params.hotelId,
-            roomNumber: req.body.RoomNumber
+            roomId: req.params.roomId
         });
-        const errorMessage = error.code === 'PERMISSION_DENIED' ? 'Permission denied' : 'Internal Server Error';
-        return res.status(500).json({ 
+        
+        const errorMessage = error.code === 'PERMISSION_DENIED' 
+            ? 'Permission denied' 
+            : 'Internal Server Error';
+            
+        return res.status(500).json({
             success: false,
-            error: errorMessage 
+            error: errorMessage
         });
     }
-    
 };
 
-module.exports = { createRoom, getHotelIds, getRoomTypes, showRoom };
+module.exports = { createRoom, getHotelIds, getRoomTypes, showRoom};

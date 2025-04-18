@@ -1,9 +1,10 @@
 const { database } = require("../config/firebaseconfig");
-const { ref, get, set, update } = require("firebase/database");
+const { ref, get, set, increment, update } = require("firebase/database");
 const { addNotification } = require("../Notification/notificationHelper");
+
 const createActivity = async (req, res) => {
     try {
-        const { hotelId, roomNumber } = req.params; // Get hotelId and roomNumber from URL
+        const { hotelId, roomNumber } = req.params;
         const { action, details, user } = req.body;
 
         // Validate required fields
@@ -21,10 +22,30 @@ const createActivity = async (req, res) => {
             });
         }
 
-        // Get the current ActivityCounter
+        // Check if hotel exists
+        const hotelRef = ref(database, `Hotel/${hotelId}`);
+        const hotelSnapshot = await get(hotelRef);
+        if (!hotelSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: "Hotel not found"
+            });
+        }
+
+        // Check if room exists
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}`);
+        const roomSnapshot = await get(roomRef);
+        if (!roomSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: "Room not found"
+            });
+        }
+
+        // Atomically increment the ActivityCounter
         const counterRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}/ActivityCounter`);
         const counterSnapshot = await get(counterRef);
-        let nextId = 1; // Default to 1 if counter doesn't exist
+        let nextId = 1;
 
         if (counterSnapshot.exists()) {
             nextId = counterSnapshot.val() + 1;
@@ -39,17 +60,20 @@ const createActivity = async (req, res) => {
             Timestamp: new Date().toISOString()
         });
 
-        // Update the ActivityCounter
-        await set(counterRef, nextId);
+        // Update the ActivityCounter atomically
+        await update(ref(database, `Hotel/${hotelId}/Room/${roomNumber}`), {
+            ActivityCounter: nextId,
+            UpdatedAt: new Date().toISOString(),
+        });
 
         // Add notification
-        const message = `Activity created in Room ${roomNumber}: ${details}`;
-        await addNotification(hotelId, "Activity", "Created", message, roomNumber, user);
+        const message = `Activity created in Room ${roomNumber}: ${details || "empty"}`;
+        await addNotification(hotelId, "Activity", "Created", message, roomNumber, user || "unknown");
 
         return res.status(201).json({
             success: true,
             message: "Activity created successfully",
-            activityId: nextId.toString() // Return as string to match Firebase key
+            ActivityId: nextId.toString()
         });
     } catch (error) {
         console.error("Error creating activity:", error.message);

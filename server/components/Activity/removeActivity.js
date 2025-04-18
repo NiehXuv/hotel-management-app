@@ -1,6 +1,7 @@
 const { database } = require("../config/firebaseconfig");
-const { ref, get, set, remove } = require("firebase/database");
+const { ref, get, remove, update } = require("firebase/database");
 const { addNotification } = require("../Notification/notificationHelper");
+
 const removeActivity = async (req, res) => {
     try {
         const { hotelId, roomNumber, activityId } = req.params;
@@ -12,67 +13,59 @@ const removeActivity = async (req, res) => {
             });
         }
 
-        // Fetch all Activities for the room
-        const activitiesRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}/Activity`);
-        const activitiesSnapshot = await get(activitiesRef);
-
-        if (!activitiesSnapshot.exists()) {
+        // Check if hotel exists
+        const hotelRef = ref(database, `Hotel/${hotelId}`);
+        const hotelSnapshot = await get(hotelRef);
+        if (!hotelSnapshot.exists()) {
             return res.status(404).json({
                 success: false,
-                error: "No activities found for this room"
+                error: "Hotel not found"
             });
         }
 
-        const activities = activitiesSnapshot.val();
-        if (!activities[activityId]) {
+        // Check if room exists
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}`);
+        const roomSnapshot = await get(roomRef);
+        if (!roomSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: "Room not found"
+            });
+        }
+
+        // Check if activity exists
+        const activityRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}/Activity/${activityId}`);
+        const activitySnapshot = await get(activityRef);
+        if (!activitySnapshot.exists()) {
             return res.status(404).json({
                 success: false,
                 error: "Activity not found"
             });
         }
 
-        // Remove the specified activity
-        const activityRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}/Activity/${activityId}`);
+        const activityData = activitySnapshot.val();
+
+        // Remove the activity
         await remove(activityRef);
 
-        // Get all remaining activities
-        const remainingActivities = Object.keys(activities)
-            .filter(id => id !== activityId)
-            .map(id => ({ id: parseInt(id), ...activities[id] }))
-            .sort((a, b) => a.id - b.id); // Sort by ID
-
-        // Reassign IDs sequentially
-        const activitiesPath = `Hotel/${hotelId}/Room/${roomNumber}/Activity`;
-        await remove(ref(database, activitiesPath)); // Clear all activities
-
-        const newActivities = {};
-        for (let i = 0; i < remainingActivities.length; i++) {
-            const newId = (i + 1).toString(); // New ID starts from 1
-            newActivities[newId] = {
-                Action: remainingActivities[i].Action,
-                Details: remainingActivities[i].Details,
-                User: remainingActivities[i].User,
-                Timestamp: remainingActivities[i].Timestamp
-            };
-        }
-
-        // Write back the reassigned activities
-        if (Object.keys(newActivities).length > 0) {
-            await set(ref(database, activitiesPath), newActivities);
-        }
-
-        // Update the ActivityCounter
+        // Decrement the ActivityCounter
         const counterRef = ref(database, `Hotel/${hotelId}/Room/${roomNumber}/ActivityCounter`);
-        const newCounterValue = remainingActivities.length; // New highest ID
-        await set(counterRef, newCounterValue);
+        const counterSnapshot = await get(counterRef);
+        const currentCounter = counterSnapshot.exists() ? counterSnapshot.val() : 0;
+        const newCounter = Math.max(0, currentCounter - 1);
 
-        // Add notification
-    const message = `Activity deleted in Room ${roomNumber}`;
-    await addNotification(hotelId, "Activity", "Deleted", message, roomNumber, activityData.User);
+        await update(ref(database, `Hotel/${hotelId}/Room/${roomNumber}`), {
+            ActivityCounter: newCounter,
+            UpdatedAt: new Date().toISOString(),
+        });
+
+        // Add notification after successful removal
+        const message = `Activity deleted in Room ${roomNumber}`;
+        await addNotification(hotelId, "Activity", "Deleted", message, roomNumber, activityData.User || "unknown");
 
         return res.status(200).json({
             success: true,
-            message: "Activity removed successfully and IDs reassigned"
+            message: "Activity removed successfully"
         });
     } catch (error) {
         console.error("Error removing activity:", error.message);

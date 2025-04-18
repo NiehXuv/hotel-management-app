@@ -294,7 +294,7 @@ const CreateAccount = () => {
               <label style={styles.formLabel}>Role</label>
               <select name="role" value={formData.role} onChange={handleChange} style={styles.select} required>
                 <option value="">Select Role</option>
-                <option value="boss">Boss</option>
+                
                 <option value="sales">Sales</option>
                 <option value="receptionist">Receptionist</option>
               </select>

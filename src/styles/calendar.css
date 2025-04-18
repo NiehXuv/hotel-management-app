@@ -1,0 +1,608 @@
+/* Calendar.css */
+
+/* Schedule Container */
+.schedule-container {
+    margin: auto;
+    padding: 1em;
+    background-color: #f9f9f9;
+    width: 100%;
+    min-height: 100vh;
+    touch-action: pan-y;
+    padding-bottom: 2em;
+  }
+  
+  /* Header Container */
+  .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 1em;
+  }
+  
+  /* Month Title */
+  .month-title {
+    flex: 1;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0;
+  }
+  
+  /* Day Card */
+  .day-card {
+    border-radius: 2em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Day Selector Container */
+  .day-selector-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  /* Day Scroll */
+  .day-scroll {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    flex-grow: 1;
+    padding: 0 10px;
+  }
+  
+  /* Day Item */
+  .day-item {
+    display: inline-flex;
+    flex-direction: column;
+    width: 45px;
+    text-align: center;
+    margin: auto;
+    border-radius: 2em;
+    cursor: pointer;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Selected Day */
+  .day-item.selected-day {
+    background-color: #add8e6;
+    color: #fff;
+    font-weight: bold;
+  }
+  
+  /* Weekday */
+  .weekday {
+    font-size: 12px;
+    color: #666;
+  }
+  
+  /* Navigation Button */
+  .nav-button {
+    padding: 5px 10px;
+    cursor: pointer;
+    background-color: #fff;
+    border: none;
+    font-size: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Search Container */
+  .search-container {
+    margin-bottom: 1em;
+    width: 100%;
+  }
+  
+  /* Search Input */
+  .search-input {
+    width: 100%;
+    padding: 0.5em;
+    border-radius: 1em;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+  }
+  
+  /* Filter Button */
+  .filter-button {
+    padding: 0.5em 1em;
+    font-size: 0.9rem;
+    border: none;
+    margin-bottom: 1em;
+    border-radius: 2em;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+  }
+  
+  .filter-button.active {
+    background-color: #add8e6;
+  }
+  
+ /* Filter content */
+.filter-content {
+  margin-top: 10px;
+  margin-bottom: 1em;
+  padding: 15px;
+  background: #FFFFFF;
+  border-radius: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.filter-select {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid #d1d5db;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.2em;
+  appearance: none;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.filter-select:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.filter-reload-button {
+  width: 60%;
+  display: flex;
+  align-items: center; /* Vertically centers the text */
+  justify-content: center; /* Horizontally centers the text */
+  margin: auto;
+  padding: 10px;
+  background: #E0E0E0;
+  border: none;
+  border-radius: 1rem;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.filter-reload-button:hover {
+  background: #D1D5DB;
+}
+
+.filter-reload-button:disabled {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+  /* Schedule Card */
+  .schedule-card {
+    width: 100%;
+    margin: auto;
+    padding: 10px;
+    border-radius: 2em;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Schedule */
+  .schedule {
+    max-height: 60vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  
+  /* Time Slot Container */
+  .time-slot-container {
+    display: flex;
+    align-items: flex-start;
+    min-height: 50px;
+  }
+  
+  /* Time Label */
+  .time-label {
+    width: 80px;
+    font-size: 16px;
+    color: #333;
+    text-align: right;
+    margin-right: 10px;
+    padding-top: 10px;
+  }
+  
+  /* Time Slot Wrapper */
+  .time-slot-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 50px;
+    flex: 1;
+    overflow-x: hidden;
+  }
+  
+  /* Check-in Card */
+  .checkin-card {
+    width: 100%;
+    min-height: 5em;
+    margin: 5px 0;
+    padding: 0.8em;
+    border: 1px solid rgb(211, 214, 218);
+    border-radius: 1em;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  
+  /* Check-out Card */
+  .checkout-card {
+    width: 100%;
+    min-height: 5em;
+    margin: 5px 0;
+    padding: 0.8em;
+    border: 1px solid rgb(211, 214, 218);
+    border-radius: 1em;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+  }
+  
+  /* Booking Details Left */
+  .booking-details-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2em;
+  }
+  
+  /* Hotel Name */
+  .hotel-name {
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  /* Room Name */
+  .room-name {
+    font-size: 12px;
+    color: #555;
+  }
+  
+  /* Customer Details */
+  .customer-details {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  
+  /* Customer Name */
+  .customer-name {
+    font-size: 14px;
+    text-align: right;
+  }
+  
+  /* No Booking Message */
+  .no-booking {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+  }
+  
+  /* Modal */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Modal Content */
+  .modal-content {
+    width: 20em;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 1.5em;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Close Button */
+  .close-button {
+    float: right;
+    cursor: pointer;
+    font-size: 20px;
+    color: #666;
+    background: none;
+    border: none;
+    padding: 0.2em 0.5em;
+    border-radius: 50%;
+    transition: color 0.2s;
+  }
+  
+  .close-button:hover {
+    color: #333;
+  }
+  
+  /* Modal Title */
+  .modal-title {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #333;
+    text-align: center;
+  }
+  
+  /* Booking Details */
+  .booking-details {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #444;
+  }
+  
+  /* Detail Text */
+  .detail-text {
+    font-size: 14px;
+    margin: 0.5em 0;
+    color: #444;
+    line-height: 1.5;
+  }
+  
+  /* Button Container */
+  .button-container {
+    display: flex;
+    gap: 1em;
+    margin-top: 1.5em;
+    justify-content: center;
+  }
+  
+  /* Status Button */
+  .status-button {
+    width: 60%;
+    padding: 0.6em 1.5em;
+    border: none;
+    border-radius: 1em;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Check In Button */
+  .check-in-button {
+    background-color: #4caf50;
+    color: #fff;
+  }
+  
+  .check-in-button:hover {
+    background-color: #45a049;
+    transform: scale(1.05);
+  }
+  
+  .check-in-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  /* Check Out Button */
+  .check-out-button {
+    background-color: #ff6347;
+    color: #fff;
+  }
+  
+  .check-out-button:hover {
+    background-color: #ff4d30;
+    transform: scale(1.05);
+  }
+  
+  .check-out-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  /* Optimal Price Card */
+  .optimal-price-card {
+    width: 80%;
+    margin: auto;
+    background-color: #e3f2fd;
+    border-radius: 1em;
+    padding: 0.8em;
+    margin-top: 1em;
+    text-align: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #bbdefb;
+  }
+  
+  /* Optimal Price Text */
+  .optimal-price-text {
+    margin: 0;
+    font-weight: bold;
+    font-size: 16px;
+    color: #1e88e5;
+  }
+  
+  /* Separator */
+  .separator {
+    height: 1px;
+    background-color: #ccc;
+    margin: 10px 0;
+  }
+  
+  /* All Booking Button */
+  .all-booking {
+    margin: 2em auto;
+    display: block;
+    padding: 1em 2em;
+    background-color: #ffd167;
+    color: #fff;
+    border: none;
+    border-radius: 2em;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .room-map {
+    margin: 2em auto;
+    display: block;
+    padding: 1em 2em;
+    background-color: #ffd167;
+    color: #fff;
+    border: none;
+    border-radius: 2em;
+    font-size: 16px;
+    cursor: pointer;
+}
+  
+  /* Filter Container */
+  .filter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  /* Label */
+  .label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+  }
+  
+  /* Loading Text */
+  .loading-text {
+    font-size: 0.8rem;
+    color: #666;
+    text-align: center;
+    margin-top: 0.5em;
+  }
+  
+  /* Error Text */
+  .error-text {
+    font-size: 0.8rem;
+    color: #dc2626;
+    text-align: center;
+    margin-top: 0.5em;
+  }
+  
+  /* Check Label */
+  .check-label {
+    font-size: 10px;
+    color: #777;
+    text-align: right;
+  }
+  
+  /* Additional Styles for Select Elements */
+  select {
+    border-radius: 1em;
+    padding: 0.5em;
+  }
+
+  /* Price Display Container */
+.price-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+  }
+  
+  /* Edit Price Button */
+  .edit-price-button {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0.2em 0.5em;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+  }
+  
+  .edit-price-button svg {
+    font-size: 14px; /* Adjust icon size if needed */
+  }
+  
+  /* Price Edit Form */
+  .price-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+  
+  /* Price Input */
+  .price-input {
+    padding: 0.5em;
+    border-radius: 0.5em;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    text-align: center;
+  }
+  
+  /* Edit Buttons Container */
+  .edit-buttons {
+    display: flex;
+    gap: 0.5em;
+    justify-content: center;
+  }
+  
+  /* Save Price Button */
+  .save-price-button {
+    padding: 0.5em 1em;
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    border-radius: 0.5em;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .save-price-button:hover {
+    background-color: #45a049;
+  }
+  
+  .save-price-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }
+  
+  /* Cancel Price Button */
+  .cancel-price-button {
+    padding: 0.5em 1em;
+    background-color: #ff6347;
+    color: #fff;
+    border: none;
+    border-radius: 0.5em;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .cancel-price-button:hover {
+    background-color: #ff4d30;
+  }
+  
+  .cancel-price-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+  }

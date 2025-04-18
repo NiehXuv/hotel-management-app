@@ -12,7 +12,8 @@ const { updateBooking } = require('./components/Booking/updateBooking');
 const { removeBooking } = require('./components/Booking/removeBooking');
 const { showBooking } = require('./components/Booking/showBooking');
 const { optimalPrice } = require('./components/Booking/optimalPrice');
-
+const { modifyBookingStatus } = require("./components/Booking/modifyBookingStatus"); 
+const { fetchMockBookings } = require("./components/Booking/fetchMockBookings");
 // Room functions
 const { createRoom, getHotelIds, getRoomTypes, showRoom } = require('./components/Room/createRoom');
 const { updateRoomStatus } = require('./components/Room/updateRoomStatus');
@@ -64,6 +65,7 @@ app.use(cors());
 app.post('/api/send-reset-email', sendResetEmail);
 app.post('/api/reset-password', resetPassword);
 app.get('/booking/list', listAllBookings);
+app.get("/booking/fetch-mock", fetchMockBookings);
 app.get('/booking/:bookingId', showBooking);
 app.post('/booking/create', createBooking);
 app.put('/booking/:bookingId', updateBooking);
@@ -73,7 +75,7 @@ app.post('/api/store-confirmation-code', storeConfirmationCode);
 app.post('/api/verify-confirmation-code', verifyConfirmationCode);
 app.post('/api/send-confirmation-email', sendConfirmationEmail);
 app.get('/booking/:bookingId/optimal-price', optimalPrice);
-
+app.put("/booking/:bookingId/status", modifyBookingStatus);
 // Room routes
 app.get('/api/hotels/ids', getHotelIds);
 app.get('/api/hotel/:hotelId/roomTypes', getRoomTypes);
@@ -82,7 +84,7 @@ app.put('/hotels/:hotelId/rooms/:roomNumber/status', updateRoomStatus);
 app.put('/hotels/:hotelId/rooms/:roomNumber', updateRoom);
 app.get('/api/hotels/:hotelId/rooms', listRooms);
 app.delete('/hotels/:hotelId/rooms/:roomNumber', deleteRoom);
-app.get('/hotels/:hotelId/rooms/:roomId', showRoom);
+app.get('/api/hotels/:hotelId/rooms/:roomId', showRoom);
 // Hotel (Property) routes
 app.post('/api/hotel/create', createProperty);
 app.get('/hotels', listProperty);

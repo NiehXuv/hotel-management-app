@@ -1,5 +1,5 @@
 const { database } = require("../config/firebaseconfig");
-const { ref, get } = require("firebase/database");
+const { ref, get, update } = require("firebase/database");
 
 const optimalPrice = async (req, res) => {
     try {
@@ -104,16 +104,13 @@ const optimalPrice = async (req, res) => {
 
         // Adjust for partial days
         if (remainingHours > 0) {
-            // Calculate the cost of the remaining hours
             const remainingHoursCost = remainingHours * PriceByHour;
-            // Compare with the cost of a full night
             if (remainingHoursCost > PriceByNight) {
-                // If remaining hours cost more than a night, add a night and set remaining hours to 0
                 nights += 1;
                 remainingHours = 0;
             }
         } else {
-            remainingHours = 0; // Ensure no negative hours
+            remainingHours = 0;
         }
 
         // Calculate nightly price
@@ -122,6 +119,12 @@ const optimalPrice = async (req, res) => {
         // Determine the optimal (lowest) price
         const optimalPrice = Math.min(hourlyPrice, nightlyPrice);
         const pricingMethod = hourlyPrice <= nightlyPrice ? "hourly" : "nightly";
+
+        // Store the optimal price and pricing method in the booking entry
+        await update(bookingRef, {
+            optimalPrice: optimalPrice,
+            pricingMethod: pricingMethod,
+        });
 
         // Return the result
         return res.status(200).json({
@@ -136,7 +139,7 @@ const optimalPrice = async (req, res) => {
                 optimalPrice,
                 pricingMethod
             },
-            message: "Optimal price calculated successfully"
+            message: "Optimal price calculated and stored successfully"
         });
 
     } catch (error) {

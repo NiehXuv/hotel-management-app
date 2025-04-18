@@ -14,6 +14,7 @@ const CreateRoom = () => {
     PriceByNight: '',
     PriceBySection: '',
     RoomNumber: '',
+    Floor: '', // New field for floor
   });
   const [hotelIds, setHotelIds] = useState([]);
   const [roomTypes, setRoomTypes] = useState([]);
@@ -92,6 +93,7 @@ const CreateRoom = () => {
     if (!roomData.RoomName || roomData.RoomName.length < 2) errors.RoomName = 'Room name must be at least 2 characters';
     if (roomData.Description.length < 10) errors.Description = 'Description must be at least 10 characters';
     if (!roomData.RoomNumber) errors.RoomNumber = 'Please enter a room number';
+    if (!roomData.Floor) errors.Floor = 'Please enter a floor number';
 
     setError(Object.values(errors)[0] || '');
     return Object.keys(errors).length === 0;
@@ -106,7 +108,7 @@ const CreateRoom = () => {
 
     setIsSubmitting(true);
     try {
-      const { hotelId, RoomType, RoomName, Description, PriceByHour, PriceByNight, PriceBySection, RoomNumber } = roomData;
+      const { hotelId, RoomType, RoomName, Description, PriceByHour, PriceByNight, PriceBySection, RoomNumber, Floor } = roomData;
 
       const matchedRoomType = roomTypes.find(rt => rt.type === RoomType) || {};
 
@@ -121,6 +123,7 @@ const CreateRoom = () => {
           PriceByNight: PriceByNight || matchedRoomType.priceByNight || 0,
           PriceBySection: PriceBySection || matchedRoomType.priceBySection || 0,
           RoomNumber,
+          Floor, // Include Floor in the request
         }),
       });
 
@@ -137,6 +140,7 @@ const CreateRoom = () => {
           PriceByNight: '',
           PriceBySection: '',
           RoomNumber: '',
+          Floor: '',
         });
         setTimeout(() => navigate('/dashboard'), 1000);
       } else {
@@ -183,7 +187,7 @@ const CreateRoom = () => {
             background-position: right 0.75rem center;
             background-size: 1.5em;
             appearance: none;
-            font-size: 13px; /* Reduced font size for consistency */
+            font-size: 13px;
           }
 
           .select:focus {
@@ -207,7 +211,7 @@ const CreateRoom = () => {
             margin-bottom: 0.25rem;
             font-weight: 500;
             color: #1f2937;
-            font-size: 13px; /* Reduced font size for consistency */
+            font-size: 13px;
           }
 
           .required-star {
@@ -235,7 +239,7 @@ const CreateRoom = () => {
           }
 
           .input-field {
-            font-size: 13px; /* Reduced font size for consistency */
+            font-size: 13px;
           }
 
           .input-field::placeholder {
@@ -250,7 +254,7 @@ const CreateRoom = () => {
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 13px; /* Reduced font size for consistency */
+            font-size: 13px;
             transition: background-color 0.2s;
           }
 
@@ -265,7 +269,7 @@ const CreateRoom = () => {
 
           @media (max-width: 480px) {
             .input-field {
-              font-size: 14px; /* Slightly larger on mobile for readability */
+              font-size: 14px;
             }
 
             .input-field::placeholder {
@@ -397,6 +401,18 @@ const CreateRoom = () => {
             placeholder="Enter room number (e.g., 101 or A101)"
             className="input-field"
             aria-label="Room Number"
+          />
+
+          <Input
+            name="Floor"
+            label="Floor Number"
+            type="text"
+            value={roomData.Floor}
+            onChange={handleChange}
+            required
+            placeholder="Enter floor number (e.g., 1, 2, 3)"
+            className="input-field"
+            aria-label="Floor Number"
           />
 
           <button

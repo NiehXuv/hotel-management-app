@@ -28,7 +28,8 @@ import Menu from '../pages/Menu';
 import Property from '../pages/Property';
 import Room from '../pages/Room'; 
 import CreateAccount from '../pages/CreateAccount'; 
-
+import RoomMap from '../pages/RoomMap';
+import RoomDetail from '../pages/RoomDetail';
 /**
  * Protected Route Component
  * Redirects to login if user is not authenticated
@@ -80,6 +81,15 @@ const AppRoutes = () => {
       />
 
       <Route 
+        path="/roommap" 
+        element={
+          <ProtectedRoute>
+            <RoomMap />
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
         path="/hotel/createroom" 
         element={
           <ProtectedRoute>
@@ -87,7 +97,13 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-
+      <Route 
+        path="/hotels/:hotelId/rooms/:roomId" 
+        element={
+          <ProtectedRoute>
+            <RoomDetail />
+          </ProtectedRoute>
+        } />
       <Route 
         path="/booking" 
         element={

@@ -10,7 +10,6 @@ const Menu = () => {
     { label: "Properties Setting", path: "/properties", icon: <FaHotel /> },
     { label: "Customer Setting", path: "/customer", icon: <FaUser /> },
     { label: "Booking Setting", path: "/booking", icon: <FaCalendar /> },
-    { label: "User Setting", path: "/user", icon: <FaCog /> },
     { label: "Financial Report", path: "/reports", icon: <FaChartLine /> },
   ];
 

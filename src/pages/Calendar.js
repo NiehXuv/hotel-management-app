@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../components/layout/BottomNavigation';
 import Card from '../components/common/Card';
+import '../styles/calendar.css';
 
 const Calendar = () => {
   const [bookings, setBookings] = useState([]);
@@ -24,6 +25,11 @@ const Calendar = () => {
   const [optimalPriceData, setOptimalPriceData] = useState(null);
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState('');
+  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [newPrice, setNewPrice] = useState('');
+  const [priceUpdateLoading, setPriceUpdateLoading] = useState(false);
+  const [mockLoading, setMockLoading] = useState(false);
 
   const navigate = useNavigate();
   const touchStartX = useRef(null);
@@ -50,7 +56,13 @@ const Calendar = () => {
 
   useEffect(() => {
     if (showModal && selectedBookings.length > 0) {
-      fetchOptimalPrice(selectedBookings[0].id);
+      const booking = selectedBookings[0];
+      if (booking.optimalPrice) {
+        setOptimalPriceData({ optimalPrice: booking.optimalPrice });
+        setNewPrice(booking.optimalPrice.toString());
+      } else {
+        fetchOptimalPrice(booking.id);
+      }
     }
   }, [showModal, selectedBookings]);
 
@@ -73,6 +85,30 @@ const Calendar = () => {
     } catch (err) {
       setError(`Error fetching bookings: ${err.message}`);
       console.error('Fetch bookings error:', err);
+    }
+  };
+
+  const fetchMockBookings = async () => {
+    setMockLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/booking/fetch-mock', {
+        method: 'GET',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to fetch mock bookings: ${errorData.message || 'Unknown error'}`);
+      }
+      const data = await response.json();
+      if (data.message === "Mock bookings fetched successfully") {
+        fetchBookings();
+      } else {
+        setError(`Failed to fetch mock bookings: ${data.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      setError(`Error fetching mock bookings: ${err.message}`);
+      console.error('Fetch mock bookings error:', err);
+    } finally {
+      setMockLoading(false);
     }
   };
 
@@ -143,6 +179,21 @@ const Calendar = () => {
       const data = await response.json();
       if (data.success) {
         setOptimalPriceData(data.data);
+        setNewPrice(data.data.optimalPrice.toString());
+        setBookings((prevBookings) =>
+          prevBookings.map((booking) =>
+            booking.id === bookingId
+              ? { ...booking, optimalPrice: data.data.optimalPrice, pricingMethod: data.data.pricingMethod }
+              : booking
+          )
+        );
+        setSelectedBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === bookingId
+              ? { ...booking, optimalPrice: data.data.optimalPrice, pricingMethod: data.data.pricingMethod }
+              : booking
+          )
+        );
       } else {
         setPriceError(`Failed to load optimal price: ${data.error || 'Unknown error'}`);
       }
@@ -151,6 +202,75 @@ const Calendar = () => {
       console.error('Fetch optimal price error:', err);
     } finally {
       setPriceLoading(false);
+    }
+  };
+
+  const updateOptimalPrice = async (bookingId, newPriceValue) => {
+    setPriceUpdateLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/booking/${bookingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ optimalPrice: parseFloat(newPriceValue) }),
+      });
+      if (!response.ok) throw new Error('Failed to update optimal price');
+      const data = await response.json();
+      if (data.message === "Booking updated successfully") {
+        setOptimalPriceData({ optimalPrice: parseFloat(newPriceValue) });
+        setBookings((prevBookings) =>
+          prevBookings.map((booking) =>
+            booking.id === bookingId
+              ? { ...booking, optimalPrice: parseFloat(newPriceValue) }
+              : booking
+          )
+        );
+        setSelectedBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === bookingId
+              ? { ...booking, optimalPrice: parseFloat(newPriceValue) }
+              : booking
+          )
+        );
+        setEditingPrice(false);
+      } else {
+        setPriceError(`Failed to update optimal price: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      setPriceError(`Error updating optimal price: ${err.message}`);
+      console.error('Update optimal price error:', err);
+    } finally {
+      setPriceUpdateLoading(false);
+    }
+  };
+
+  const updateBookingStatus = async (bookingId, newStatus) => {
+    setLoadingStatus(true);
+    try {
+      const response = await fetch(`http://localhost:5000/booking/${bookingId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update status');
+      }
+      const data = await response.json();
+      if (data.message === "Booking status updated successfully") {
+        setSelectedBookings((prev) =>
+          prev.map((booking) =>
+            booking.id === bookingId ? { ...booking, bookingStatus: newStatus } : booking
+          )
+        );
+        fetchBookings();
+      } else {
+        setError(`Failed to update status: ${data.message || 'Unknown error'}`);
+      }
+    } catch (err) {
+      setError(`Error updating status: ${err.message}`);
+      console.error('Update status error:', err);
+    } finally {
+      setLoadingStatus(false);
     }
   };
 
@@ -255,11 +375,9 @@ const Calendar = () => {
       }
       const startTotalMinutes = startHour * 60 + startMinute;
       const color =
-        booking.paymentStatus === 'Paid'
-          ? '#90EE90'
-          : booking.paymentStatus === 'Unpaid'
-          ? '#ADD8E6'
-          : '#E0F2F1';
+        booking.bookingStatus === 'CheckedIn' ? '#E0F2F1' :
+        booking.paymentStatus === 'Paid' ? '#90EE90' :
+        booking.paymentStatus === 'Unpaid' ? '#ADD8E6' : '#E0F2F1';
       const period = startHour < 12 ? 'am' : 'pm';
       const displayHour = startHour <= 12 ? startHour : startHour - 12;
       const time = `${displayHour.toString().padStart(2, '0')}:00 ${period}`;
@@ -289,11 +407,9 @@ const Calendar = () => {
       }
       const endTotalMinutes = endHour * 60 + endMinute;
       const color =
-        booking.paymentStatus === 'Paid'
-          ? '#FFB6C1'
-          : booking.paymentStatus === 'Unpaid'
-          ? '#FFA07A'
-          : '#F0E68C';
+        booking.bookingStatus === 'CheckedOut' ? '#FF4500' :
+        booking.paymentStatus === 'Paid' ? '#FFB6C1' :
+        booking.paymentStatus === 'Unpaid' ? '#FFA07A' : '#F0E68C';
       const period = endHour < 12 ? 'am' : 'pm';
       const displayHour = endHour <= 12 ? endHour : endHour - 12;
       const time = `${displayHour.toString().padStart(2, '0')}:00 ${period}`;
@@ -338,6 +454,7 @@ const Calendar = () => {
     setSelectedBookings([]);
     setOptimalPriceData(null);
     setPriceError('');
+    setEditingPrice(false);
   };
 
   const handleTouchStart = (e) => {
@@ -359,75 +476,65 @@ const Calendar = () => {
 
   return (
     <div
-      style={styles.scheduleContainer}
+      className="schedule-container"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      <div style={styles.headerContainer}>
-        <button style={styles.navButton} onClick={() => handleMonthChange(-1)}>
+      <div className="header-container">
+        <button className="nav-button" onClick={() => handleMonthChange(-1)}>
           ‹
         </button>
-        <h3 style={styles.monthTitle}>{formattedMonth}</h3>
-        <button style={styles.navButton} onClick={() => handleMonthChange(1)}>
+        <h3 className="month-title">{formattedMonth}</h3>
+        <button className="nav-button" onClick={() => handleMonthChange(1)}>
           ›
         </button>
       </div>
 
-      <Card className="day-selector-card" style={styles.dayCard}>
-        <div style={styles.daySelectorContainer}>
-          <button style={styles.navButton} onClick={() => handleDayChange(-7)}>
+      <Card className="day-card">
+        <div className="day-selector-container">
+          <button className="nav-button" onClick={() => handleDayChange(-7)}>
             ‹
           </button>
-          <div style={styles.dayScroll}>
+          <div className="day-scroll">
             {generateDayRange().map((date, index) => (
               <div
                 key={index}
-                style={{
-                  ...styles.dayItem,
-                  ...(date.toDateString() === currentDate.toDateString()
-                    ? styles.selectedDay
-                    : {}),
-                }}
+                className={`day-item ${date.toDateString() === currentDate.toDateString() ? 'selected-day' : ''}`}
                 onClick={() => setCurrentDate(new Date(date))}
               >
-                <span style={styles.weekday}>
+                <span className="weekday">
                   {date.toLocaleDateString('en-US', { weekday: 'short' }).substring(0, 1)}
                 </span>
                 <span>{date.getDate()}</span>
               </div>
             ))}
           </div>
-          <button style={styles.navButton} onClick={() => handleDayChange(7)}>
+          <button className="nav-button" onClick={() => handleDayChange(7)}>
             ›
           </button>
         </div>
       </Card>
 
-      <div style={styles.searchContainer}>
+      <div className="search-container">
         <input
           type="text"
           placeholder="Search by Hotel, Room, Customer..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={styles.searchInput}
+          className="search-input"
         />
       </div>
-
+      
       <button
-        style={{
-          ...styles.filterButton,
-          backgroundColor: showFilter ? '#ADD8E6' : '#fff',
-        }}
+        className={`filter-button ${showFilter ? 'active' : ''}`}
         onClick={() => setShowFilter(!showFilter)}
       >
         Filter {showFilter ? '▲' : '▼'}
       </button>
       {showFilter && (
-        <div style={styles.filterContent}>
-          <div style={styles.filterContainer}>
-            <label htmlFor="hotelFilter" style={styles.label}>
-              By Hotel
-            </label>
+        <div className="filter-content">
+          <div className="filter-item">
+            <label htmlFor="hotelFilter" className="filter-label">By Hotel</label>
             <select
               id="hotelFilter"
               value={selectedHotel}
@@ -436,7 +543,7 @@ const Calendar = () => {
                 setSelectedRoom('');
               }}
               disabled={loadingHotels}
-              style={{ borderRadius: '1em', padding: '0.5em' }}
+              className="filter-select"
             >
               <option value="">All Hotels</option>
               {hotels
@@ -447,19 +554,16 @@ const Calendar = () => {
                   </option>
                 ))}
             </select>
-            {loadingHotels && <p style={styles.loadingText}>Loading hotels...</p>}
-            {error && <p style={styles.errorText}>{error}</p>}
+            {loadingHotels && <p className="loading-text">Loading hotels...</p>}
           </div>
-          <div style={styles.filterContainer}>
-            <label htmlFor="roomFilter" style={styles.label}>
-              By Room
-            </label>
+          <div className="filter-item">
+            <label htmlFor="roomFilter" className="filter-label">By Room</label>
             <select
               id="roomFilter"
               value={selectedRoom}
               onChange={(e) => setSelectedRoom(e.target.value)}
               disabled={!selectedHotel || loadingRooms}
-              style={{ borderRadius: '1em', padding: '0.5em' }}
+              className="filter-select"
             >
               <option value="">All Rooms</option>
               {rooms
@@ -470,155 +574,217 @@ const Calendar = () => {
                   </option>
                 ))}
             </select>
-            {loadingRooms && <p style={styles.loadingText}>Loading rooms...</p>}
-            {roomError && <p style={styles.errorText}>{roomError}</p>}
+            {loadingRooms && <p className="loading-text">Loading rooms...</p>}
           </div>
-          <div style={styles.filterContainer}>
-            <label htmlFor="paymentStatusFilter" style={styles.label}>
-              By Payment Status
-            </label>
+          <div className="filter-item">
+            <label htmlFor="paymentStatusFilter" className="filter-label">By Payment Status</label>
             <select
               id="paymentStatusFilter"
               value={selectedPaymentStatus}
               onChange={(e) => setSelectedPaymentStatus(e.target.value)}
-              style={{ borderRadius: '1em', padding: '0.5em' }}
+              className="filter-select"
             >
               <option value="">All Payment Statuses</option>
               <option value="Paid">Paid</option>
               <option value="Unpaid">Unpaid</option>
             </select>
           </div>
-          <div style={styles.filterContainer}>
-            <label htmlFor="bookingStatusFilter" style={styles.label}>
-              By Booking Status
-            </label>
+          <div className="filter-item">
+            <label htmlFor="bookingStatusFilter" className="filter-label">By Booking Status</label>
             <select
               id="bookingStatusFilter"
               value={selectedBookingStatus}
               onChange={(e) => setSelectedBookingStatus(e.target.value)}
-              style={{ borderRadius: '1em', padding: '0.5em' }}
+              className="filter-select"
             >
               <option value="">All Booking Statuses</option>
               <option value="Confirmed">Confirmed</option>
               <option value="Pending">Pending</option>
               <option value="Cancelled">Cancelled</option>
+              <option value="CheckedIn">Checked In</option>
+              <option value="CheckedOut">Checked Out</option>
             </select>
           </div>
+          <button
+            className="filter-reload-button"
+            onClick={fetchMockBookings}
+            disabled={mockLoading}
+          >
+            {mockLoading ? 'Fetching Mock Data...' : 'Reload'}
+          </button>
+          {error && <p className="error-text">{error}</p>}
+          {roomError && <p className="error-text">{roomError}</p>}
         </div>
       )}
+    
+      {error && !showFilter && <p className="error-text">{error}</p>}
+      {roomError && !showFilter && <p className="error-text">{roomError}</p>}
 
       {bookedTimes.length === 0 && (
-        <p style={styles.noBooking}>No check-ins or check-outs for this day.</p>
+        <p className="no-booking">No check-ins or check-outs for this day.</p>
       )}
 
-      <Card className="schedule-view-card" style={styles.scheduleCard}>
-        <div style={styles.schedule}>
+      <Card className="schedule-card">
+        <div className="schedule">
           {bookedTimes.map((time, index) => {
             const slotsInHour = timeSlotMap[time];
             return (
               <React.Fragment key={index}>
-                <div style={styles.timeSlotContainer}>
-                  <span style={styles.timeLabel}>{time}</span>
-                  <div style={styles.timeSlotWrapper}>
+                <div className="time-slot-container">
+                  <span className="time-label">{time}</span>
+                  <div className="time-slot-wrapper">
                     {slotsInHour.map((slot) => (
                       slot.type === 'checkin' ? (
                         <div
                           key={slot.id}
-                          style={{
-                            ...styles.checkinCard,
-                            backgroundColor: slot.color,
-                          }}
+                          className="checkin-card"
+                          style={{ backgroundColor: slot.color }}
                           onClick={() => handleTimeSlotClick(slot.booking)}
                         >
-                          <div style={styles.bookingDetailsLeft}>
-                            <div style={styles.hotelName}>
+                          <div className="booking-details-left">
+                            <div className="hotel-name">
                               {getHotelNameById(slot.booking.hotelId)}
                             </div>
-                            <div style={styles.roomName}>
+                            <div className="room-name">
                               {getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}
                             </div>
                           </div>
-                          <div style={styles.customerDetails}>
-                            <div style={styles.customerName}>
+                          <div className="customer-details">
+                            <div className="customer-name">
                               {slot.booking.customerId}
                             </div>
-                            <div style={styles.checkLabel}>Check-in</div>
+                            <div className="check-label">Check-in</div>
                           </div>
                         </div>
                       ) : (
                         <div
                           key={slot.id}
-                          style={{
-                            ...styles.checkoutCard,
-                            backgroundColor: slot.color,
-                          }}
+                          className="checkout-card"
+                          style={{ backgroundColor: slot.color }}
                           onClick={() => handleTimeSlotClick(slot.booking)}
                         >
-                          <div style={styles.bookingDetailsLeft}>
-                            <div style={styles.hotelName}>
+                          <div className="booking-details-left">
+                            <div className="hotel-name">
                               {getHotelNameById(slot.booking.hotelId)}
                             </div>
-                            <div style={styles.roomName}>
+                            <div className="room-name">
                               {getRoomNameById(slot.booking.hotelId, slot.booking.roomId)}
                             </div>
                           </div>
-                          <div style={styles.customerDetails}>
-                            <div style={styles.customerName}>
+                          <div className="customer-details">
+                            <div className="customer-name">
                               {slot.booking.customerId}
                             </div>
-                            <div style={styles.checkLabel}>Check-out</div>
+                            <div className="check-label">Check-out</div>
                           </div>
                         </div>
                       )
                     ))}
                   </div>
                 </div>
-                {index < bookedTimes.length - 1 && <div style={styles.separator}></div>}
+                {index < bookedTimes.length - 1 && <div className="separator"></div>}
               </React.Fragment>
             );
           })}
         </div>
-        <button style={styles.allBooking} onClick={() => navigate('/booking')}>
-          All Booking
-        </button>
+        <div className="button-container">
+          <button className="all-booking" onClick={() => navigate('/booking')}>
+            All Booking
+          </button>
+          <button className="room-map" onClick={() => navigate('/roommap')}>
+            Room Map
+          </button>
+        </div>
       </Card>
 
       {showModal && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <button style={styles.closeButton} onClick={closeModal}>
+        <div className="modal">
+          <div className="modal-content">
+            <button className="close-button" onClick={closeModal}>
               ×
             </button>
             {selectedBookings.length ? (
               <>
-                <h3 style={styles.modalTitle}>Booking Details</h3>
+                <h3 className="modal-title">Booking Details</h3>
                 {selectedBookings.map((booking) => (
-                  <div key={booking.id} style={styles.bookingDetails}>
-                    <p>Room: {getRoomNameById(booking.hotelId, booking.roomId)}</p>
-                    <p>Customer: {booking.customerId}</p>
-                    <p>Check-in: {booking.bookIn}</p>
-                    <p>Check-out: {booking.bookOut}</p>
-                    <p>ETA: {booking.eta}</p>
-                    <p>ETD: {booking.etd}</p>
-                    <p>Payment Status: {booking.paymentStatus}</p>
-                    <p>Booking Status: {booking.bookingStatus}</p>
-                    {/* Display Optimal Price in a colored Card */}
-                    {priceLoading && <p style={styles.loadingText}>Loading optimal price...</p>}
-                    {priceError && <p style={styles.errorText}>{priceError}</p>}
+                  <div key={booking.id} className="booking-details">
+                    <p className="detail-text">Room: {getRoomNameById(booking.hotelId, booking.roomId)}</p>
+                    <p className="detail-text">Customer: {booking.customerId}</p>
+                    <p className="detail-text">Check-in: {booking.bookIn}</p>
+                    <p className="detail-text">Check-out: {booking.bookOut}</p>
+                    <p className="detail-text">ETA: {booking.eta}</p>
+                    <p className="detail-text">ETD: {booking.etd}</p>
+                    <p className="detail-text">Payment Status: {booking.paymentStatus}</p>
+                    <p className="detail-text">Booking Status: {booking.bookingStatus}</p>
+                    <div className="button-container">
+                      {booking.bookingStatus !== 'CheckedIn' &&
+                       booking.bookingStatus !== 'CheckedOut' &&
+                       booking.bookingStatus !== 'Cancelled' && (
+                        <button
+                          className="status-button check-in-button"
+                          onClick={() => updateBookingStatus(booking.id, 'CheckedIn')}
+                          disabled={loadingStatus}
+                        >
+                          {loadingStatus ? 'Updating...' : 'Check In'}
+                        </button>
+                      )}
+                      {booking.bookingStatus === 'CheckedIn' && (
+                        <button
+                          className="status-button check-out-button"
+                          onClick={() => updateBookingStatus(booking.id, 'CheckedOut')}
+                          disabled={loadingStatus}
+                        >
+                          {loadingStatus ? 'Updating...' : 'Check Out'}
+                        </button>
+                      )}
+                    </div>
+                    {priceLoading && <p className="loading-text">Loading optimal price...</p>}
+                    {priceError && <p className="error-text">{priceError}</p>}
                     {optimalPriceData && (
-                      <Card
-                        style={{
-                          backgroundColor: '#E0F7FA', // Light cyan background for the card
-                          borderRadius: '1em',
-                          padding: '0.5em',
-                          marginTop: '0.5em',
-                          textAlign: 'center',
-                        }}
-                      >
-                        <p style={{ margin: 0, fontWeight: 'bold', color: '#00796B' }}>
-                          Optimal Price: ${optimalPriceData.optimalPrice} 
-                        </p>
-                      </Card>
+                      <div className="optimal-price-card">
+                        {editingPrice ? (
+                          <div className="price-edit-form">
+                            <input
+                              type="number"
+                              value={newPrice}
+                              onChange={(e) => setNewPrice(e.target.value)}
+                              className="price-input"
+                              placeholder="Enter new price"
+                            />
+                            <div className="edit-buttons">
+                              <button
+                                className="save-price-button"
+                                onClick={() => updateOptimalPrice(booking.id, newPrice)}
+                                disabled={priceUpdateLoading || !newPrice || newPrice <= 0}
+                              >
+                                {priceUpdateLoading ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                className="cancel-price-button"
+                                onClick={() => {
+                                  setEditingPrice(false);
+                                  setNewPrice(optimalPriceData.optimalPrice.toString());
+                                }}
+                                disabled={priceUpdateLoading}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="price-display">
+                            <p className="optimal-price-text">
+                              Optimal Price: ${optimalPriceData.optimalPrice}
+                            </p>
+                            <button
+                              className="edit-price-button"
+                              onClick={() => setEditingPrice(true)}
+                            >
+                              ✏️
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -630,258 +796,6 @@ const Calendar = () => {
       <BottomNav />
     </div>
   );
-};
-
-const styles = {
-  scheduleContainer: {
-    margin: 'auto',
-    padding: '1em',
-    backgroundColor: '#f9f9f9',
-    width: '100%',
-    minHeight: '100vh',
-    touchAction: 'pan-y',
-    paddingBottom: '2em'
-  },
-  headerContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'relative',
-    marginBottom: '1em',
-  },
-  monthTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: '24px',
-    fontWeight: 'bold',
-    margin: 0,
-  },
-  dayCard: {
-    borderRadius: '2em',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  daySelectorContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dayScroll: {
-    display: 'flex',
-    overflowX: 'auto',
-    whiteSpace: 'nowrap',
-    flexGrow: 1,
-    padding: '0 10px',
-  },
-  dayItem: {
-    display: 'inline-flex',
-    flexDirection: 'column',
-    width: '45px',
-    textAlign: 'center',
-    margin: 'auto',
-    borderRadius: '2em',
-    cursor: 'pointer',
-    backgroundColor: '#fff',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  selectedDay: {
-    backgroundColor: '#ADD8E6',
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  weekday: {
-    fontSize: '12px',
-    color: '#666',
-  },
-  navButton: {
-    padding: '5px 10px',
-    cursor: 'pointer',
-    backgroundColor: '#fff',
-    border: 'none',
-    fontSize: '18px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  searchContainer: {
-    marginBottom: '1em',
-    width: '100%',
-  },
-  searchInput: {
-    width: '100%',
-    padding: '0.5em',
-    borderRadius: '1em',
-    border: '1px solid #ccc',
-    fontSize: '0.9rem',
-  },
-  filterButton: {
-    padding: '0.5em 1em',
-    fontSize: '0.9rem',
-    border: 'none',
-    marginBottom: '1em',
-    borderRadius: '2em',
-    cursor: 'pointer',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    backgroundColor: '#fff',
-  },
-  filterContent: {
-    padding: '1em',
-  },
-  scheduleCard: {
-    width: '100%',
-    margin: 'auto',
-    padding: '10px',
-    borderRadius: '2em',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  schedule: {
-    maxHeight: '60vh',
-    overflowY: 'auto',
-    position: 'relative',
-  },
-  timeSlotContainer: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    minHeight: '50px',
-  },
-  timeLabel: {
-    width: '80px',
-    fontSize: '16px',
-    color: '#333',
-    textAlign: 'right',
-    marginRight: '10px',
-    paddingTop: '10px',
-  },
-  timeSlotWrapper: {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '50px',
-    flex: 1,
-    overflowX: 'hidden',
-  },
-  checkinCard: {
-    width: '100%',
-    minHeight: '4em',
-    margin: '5px 0',
-    padding: '0.8em',
-    border: '1px solid rgb(211, 214, 218)',
-    borderRadius: '1em',
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '14px',
-    color: '#000',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    cursor: 'pointer',
-  },
-  checkoutCard: {
-    width: '100%',
-    minHeight: '4em',
-    margin: '5px 0',
-    padding: '0.8em',
-    border: '1px solid rgb(211, 214, 218)',
-    borderRadius: '1em',
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '14px',
-    color: '#000',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    cursor: 'pointer',
-  },
-  bookingDetailsLeft: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: '0.2em',
-  },
-  hotelName: {
-    fontWeight: 'bold',
-    fontSize: '14px',
-  },
-  roomName: {
-    fontSize: '12px',
-    color: '#555',
-  },
-  customerName: {
-    fontSize: '14px',
-    textAlign: 'right',
-  },
-  noBooking: {
-    textAlign: 'center',
-    color: '#888',
-    padding: '20px',
-  },
-  modal: {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    right: '0',
-    bottom: '0',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '20em',
-    padding: '20px',
-    backgroundColor: '#fff',
-    borderRadius: '2em',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-  },
-  closeButton: {
-    float: 'right',
-    cursor: 'pointer',
-    fontSize: '20px',
-  },
-  modalTitle: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-    marginBottom: '15px',
-  },
-  bookingDetails: {
-    marginTop: '10px',
-    fontSize: '16px',
-  },
-  separator: {
-    height: '1px',
-    backgroundColor: '#ccc',
-    margin: '10px 0',
-  },
-  allBooking: {
-    margin: '2em auto',
-    display: 'block',
-    padding: '1em 2em',
-    backgroundColor: '#FFD167',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '2em',
-    fontSize: '16px',
-    cursor: 'pointer',
-  },
-  filterContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-    marginBottom: '1rem',
-  },
-  label: {
-    fontSize: '0.9rem',
-    marginBottom: '0.3rem',
-  },
-  loadingText: {
-    fontSize: '0.8rem',
-    color: '#666',
-  },
-  errorText: {
-    fontSize: '0.8rem',
-    color: '#dc2626',
-  },
-  checkLabel: {
-    fontSize: '10px',
-    color: '#777',
-    textAlign: 'right',
-  },
 };
 
 export default Calendar;
