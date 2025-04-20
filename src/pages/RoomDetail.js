@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import BottomNav from '../components/layout/BottomNavigation';
 import '../styles/room-detail.css';
+import { FaUpload, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa'; // Import icons
 
 const RoomDetail = () => {
   const { hotelId, roomId } = useParams();
@@ -14,6 +15,7 @@ const RoomDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showActivityForm, setShowActivityForm] = useState(false);
   const [showIssueForm, setShowIssueForm] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [newActivity, setNewActivity] = useState({
     Action: '',
     Details: '',
@@ -35,7 +37,6 @@ const RoomDetail = () => {
     Status: '',
   });
 
-  // Fetch hotel IDs on mount
   useEffect(() => {
     const fetchHotelIds = async () => {
       try {
@@ -60,7 +61,6 @@ const RoomDetail = () => {
     fetchHotelIds();
   }, []);
 
-  // Fetch room types when hotelId is available
   useEffect(() => {
     if (!hotelId) return;
 
@@ -87,7 +87,6 @@ const RoomDetail = () => {
     fetchRoomTypes();
   }, [hotelId]);
 
-  // Fetch room details on mount
   useEffect(() => {
     if (!hotelId || !roomId) return;
 
@@ -105,7 +104,7 @@ const RoomDetail = () => {
         }
         const data = await response.json();
         if (data.success) {
-          console.log('Fetched room data:', data.data); // Debug log
+          console.log('Fetched room data:', data.data);
           setRoomData(data.data);
           setEditData({
             RoomType: data.data.roomType || '',
@@ -131,30 +130,125 @@ const RoomDetail = () => {
     fetchRoomDetails();
   }, [hotelId, roomId]);
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      setError('Please select an image to upload.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}/images`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!updatedResponse.ok) {
+          const text = await updatedResponse.text();
+          throw new Error(`HTTP error! status: ${updatedResponse.status}, response: ${text}`);
+        }
+        const updatedData = await updatedResponse.json();
+        if (updatedData.success) {
+          setRoomData(updatedData.data);
+          setError('');
+        } else {
+          setError('Failed to refresh room details after uploading image');
+        }
+      } else {
+        setError(data.error || 'Failed to upload image');
+      }
+    } catch (err) {
+      setError(`Failed to upload image: ${err.message}`);
+      console.error('Image upload error:', err);
+    }
+  };
+
+  const handleImageDelete = async (imageId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}/images/${imageId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, response: ${text}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!updatedResponse.ok) {
+          const text = await updatedResponse.text();
+          throw new Error(`HTTP error! status: ${updatedResponse.status}, response: ${text}`);
+        }
+        const updatedData = await updatedResponse.json();
+        if (updatedData.success) {
+          setRoomData(updatedData.data);
+          setError('');
+          if (currentImageIndex >= updatedData.data.images.length) {
+            setCurrentImageIndex(Math.max(0, updatedData.data.images.length - 1));
+          }
+        } else {
+          setError('Failed to refresh room details after deleting image');
+        }
+      } else {
+        setError(data.error || 'Failed to delete image');
+      }
+    } catch (err) {
+      setError(`Failed to delete image: ${err.message}`);
+      console.error('Image delete error:', err);
+    }
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? (roomData.images.length - 1) : prev - 1));
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev === roomData.images.length - 1 ? 0 : prev + 1));
+  };
+
   const handleEditChange = (e) => {
     setEditData({ ...editData, [e.target.name]: e.target.value });
+    setError('');
   };
 
   const handleActivityChange = (e) => {
     setNewActivity({ ...newActivity, [e.target.name]: e.target.value });
-    setError(''); // Clear error on change
+    setError('');
   };
 
   const handleIssueChange = (e) => {
     setNewIssue({ ...newIssue, [e.target.name]: e.target.value });
-    setError(''); // Clear error on change
+    setError('');
   };
 
   const handleAddActivity = async (e) => {
     e.preventDefault();
-    // Use HTML5 form validation
     const form = e.target;
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
     }
 
-    // Additional client-side validation
     if (!newActivity.Action.trim() || !newActivity.Details.trim() || !newActivity.User.trim()) {
       setError('Please fill in all activity fields.');
       return;
@@ -165,7 +259,7 @@ const RoomDetail = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: newActivity.Action, // Match backend field name
+          action: newActivity.Action,
           details: newActivity.Details,
           user: newActivity.User,
         }),
@@ -178,7 +272,6 @@ const RoomDetail = () => {
 
       const data = await response.json();
       if (data.success) {
-        // Refresh room details
         const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -192,7 +285,7 @@ const RoomDetail = () => {
           setRoomData(updatedData.data);
           setNewActivity({ Action: '', Details: '', User: '' });
           setShowActivityForm(false);
-          setError(''); // Clear error on success
+          setError('');
         } else {
           setError('Failed to refresh room details after adding activity');
         }
@@ -207,14 +300,12 @@ const RoomDetail = () => {
 
   const handleAddIssue = async (e) => {
     e.preventDefault();
-    // Use HTML5 form validation
     const form = e.target;
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
     }
 
-    // Additional client-side validation
     if (!newIssue.Description.trim()) {
       setError('Please provide a description for the issue.');
       return;
@@ -237,7 +328,6 @@ const RoomDetail = () => {
 
       const data = await response.json();
       if (data.success) {
-        // Refresh room details
         const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -251,7 +341,7 @@ const RoomDetail = () => {
           setRoomData(updatedData.data);
           setNewIssue({ Description: '', Status: 'PENDING' });
           setShowIssueForm(false);
-          setError(''); // Clear error on success
+          setError('');
         } else {
           setError('Failed to refresh room details after adding issue');
         }
@@ -278,7 +368,6 @@ const RoomDetail = () => {
 
       const data = await response.json();
       if (data.success) {
-        // Refresh room details
         const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -290,7 +379,7 @@ const RoomDetail = () => {
         const updatedData = await updatedResponse.json();
         if (updatedData.success) {
           setRoomData(updatedData.data);
-          setError(''); // Clear error on success
+          setError('');
         } else {
           setError('Failed to refresh room details after removing activity');
         }
@@ -317,7 +406,6 @@ const RoomDetail = () => {
 
       const data = await response.json();
       if (data.success) {
-        // Refresh room details
         const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -329,7 +417,7 @@ const RoomDetail = () => {
         const updatedData = await updatedResponse.json();
         if (updatedData.success) {
           setRoomData(updatedData.data);
-          setError(''); // Clear error on success
+          setError('');
         } else {
           setError('Failed to refresh room details after removing issue');
         }
@@ -370,7 +458,6 @@ const RoomDetail = () => {
       const data = await response.json();
 
       if (data.success) {
-        // Refresh room details after update
         const updatedResponse = await fetch(`http://localhost:5000/api/hotels/${hotelId}/rooms/${roomId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -422,8 +509,66 @@ const RoomDetail = () => {
         <h2>{roomData.roomName || 'Room Details'}</h2>
       </div>
 
-      <div className="room-image">
-        <img src="https://i0.wp.com/thesefourwallsblog.com/wp-content/uploads/2021/02/Zones-example.jpg?w=2000&ssl=1" alt="Room" />
+      <div className="card">
+        <div className="room-image-slider">
+          {roomData.images && roomData.images.length > 0 ? (
+            <div className="slider-container">
+              <button
+                className="slider-arrow left"
+                onClick={handlePrevImage}
+                disabled={roomData.images.length <= 1}
+              >
+                <FaChevronLeft />
+              </button>
+              <img
+                src={roomData.images[currentImageIndex].url}
+                alt={`Room ${currentImageIndex + 1}`}
+                className="slider-image"
+              />
+              <button
+                className="slider-arrow right"
+                onClick={handleNextImage}
+                disabled={roomData.images.length <= 1}
+              >
+                <FaChevronRight />
+              </button>
+              <div className="slider-indicators">
+                {roomData.images.map((_, index) => (
+                  <span
+                    key={index}
+                    className={`indicator ${index === currentImageIndex ? 'active' : ''}`}
+                    onClick={() => setCurrentImageIndex(index)}
+                  />
+                ))}
+              </div>
+              <button
+                className="delete-image-button"
+                onClick={() => handleImageDelete(roomData.images[currentImageIndex].ImageId)}
+                title="Delete Image"
+              >
+                <FaTrash />
+              </button>
+            </div>
+          ) : (
+            <img
+              src="https://via.placeholder.com/480x200?text=Room+Image"
+              alt="Room Placeholder"
+              className="slider-image"
+            />
+          )}
+          <div className="image-upload">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              id="image-upload"
+              style={{ display: 'none' }}
+            />
+            <label htmlFor="image-upload" className="upload-button" title="Upload Image">
+              <FaUpload />
+            </label>
+          </div>
+        </div>
       </div>
 
       <div className="card">
@@ -431,10 +576,13 @@ const RoomDetail = () => {
         <div className="room-info-header">
           <div>
             <h3>{roomData.roomName}</h3>
-            <p className="location">Floor {roomData.floor || 'Unknown Location'}</p>
+            <p className="location">Floor Number:{roomData.floor || 'Unknown Floor'}</p>
           </div>
           <div className="price">
-            ${roomData.priceByNight || 0} /night
+            ${roomData.priceByNight || 0} /night <br />
+          <div className="status">
+            {roomData.status || 'Unknown'}
+            </div>
           </div>
         </div>
         <div className="room-stats">
@@ -456,14 +604,131 @@ const RoomDetail = () => {
           </div>
         </div>
       </div>
-      </div>
 
-      <div className="card">
       <div className="room-description">
         <h4>Description</h4>
         <p>{roomData.description || 'No description available.'}</p>
       </div>
+      
+      <button className="edit-button" onClick={handleEditToggle}>
+        {isEditing ? 'Cancel' : 'Edit Room'}
+      </button>
+      
+      
+      {isEditing && (
+        <div className="card">
+        <form onSubmit={handleEditSubmit} className="edit-form">
+          <div className="form-group">
+            <label>Room Name</label>
+            <input
+              type="text"
+              name="RoomName"
+              value={editData.RoomName}
+              onChange={handleEditChange}
+              required
+              placeholder="Enter room name"
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              name="Description"
+              value={editData.Description}
+              onChange={handleEditChange}
+              required
+              placeholder="Enter room description"
+            />
+          </div>
+          <div className="form-group">
+            <label>Room Type</label>
+            <select
+              name="RoomType"
+              value={editData.RoomType}
+              onChange={handleEditChange}
+              required
+            >
+              <option value="">Select Room Type</option>
+              {roomTypes.map((rt, index) => (
+                <option key={index} value={rt.type}>{rt.type}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Price by Hour</label>
+            <input
+              type="number"
+              name="PriceByHour"
+              value={editData.PriceByHour}
+              onChange={handleEditChange}
+              placeholder="Enter price per hour"
+              step="0.01"
+            />
+          </div>
+          <div className="form-group">
+            <label>Price by Night</label>
+            <input
+              type="number"
+              name="PriceByNight"
+              value={editData.PriceByNight}
+              onChange={handleEditChange}
+              placeholder="Enter price per night"
+              step="0.01"
+            />
+          </div>
+          <div className="form-group">
+            <label>Price by Section</label>
+            <input
+              type="number"
+              name="PriceBySection"
+              value={editData.PriceBySection}
+              onChange={handleEditChange}
+              placeholder="Enter price per section"
+              step="0.01"
+            />
+          </div>
+          <div className="form-group">
+            <label>Room Number</label>
+            <input
+              type="text"
+              name="RoomNumber"
+              value={editData.RoomNumber}
+              onChange={handleEditChange}
+              required
+              placeholder="Enter room number"
+            />
+          </div>
+          <div className="form-group">
+            <label>Floor</label>
+            <input
+              type="text"
+              name="Floor"
+              value={editData.Floor}
+              onChange={handleEditChange}
+              required
+              placeholder="Enter floor number"
+            />
+          </div>
+          <div className="form-group">
+            <label>Status</label>
+            <select
+              name="Status"
+              value={editData.Status}
+              onChange={handleEditChange}
+              required
+            >
+              <option value="Available">Available</option>
+              <option value="Occupied">Occupied</option>
+            </select>
+          </div>
+          <button type="submit" className="save-button">Save Changes</button>
+        </form>
+        </div>
+      )}
+
+
+
       </div>
+
       <div className="room-counters">
         <div className="card">
           <div className="counter-item">
@@ -589,119 +854,7 @@ const RoomDetail = () => {
         </div>
       </div>
 
-      <button className="edit-button" onClick={handleEditToggle}>
-        {isEditing ? 'Cancel' : 'Edit Room'}
-      </button>
-
-      {isEditing && (
-        <div className="card2">
-        <form onSubmit={handleEditSubmit} className="edit-form">
-          <div className="form-group">
-            <label>Room Name</label>
-            <input
-              type="text"
-              name="RoomName"
-              value={editData.RoomName}
-              onChange={handleEditChange}
-              required
-              placeholder="Enter room name"
-            />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              name="Description"
-              value={editData.Description}
-              onChange={handleEditChange}
-              required
-              placeholder="Enter room description"
-            />
-          </div>
-          <div className="form-group">
-            <label>Room Type</label>
-            <select
-              name="RoomType"
-              value={editData.RoomType}
-              onChange={handleEditChange}
-              required
-            >
-              <option value="">Select Room Type</option>
-              {roomTypes.map((rt, index) => (
-                <option key={index} value={rt.type}>{rt.type}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Price by Hour</label>
-            <input
-              type="number"
-              name="PriceByHour"
-              value={editData.PriceByHour}
-              onChange={handleEditChange}
-              placeholder="Enter price per hour"
-              step="0.01"
-            />
-          </div>
-          <div className="form-group">
-            <label>Price by Night</label>
-            <input
-              type="number"
-              name="PriceByNight"
-              value={editData.PriceByNight}
-              onChange={handleEditChange}
-              placeholder="Enter price per night"
-              step="0.01"
-            />
-          </div>
-          <div className="form-group">
-            <label>Price by Section</label>
-            <input
-              type="number"
-              name="PriceBySection"
-              value={editData.PriceBySection}
-              onChange={handleEditChange}
-              placeholder="Enter price per section"
-              step="0.01"
-            />
-          </div>
-          <div className="form-group">
-            <label>Room Number</label>
-            <input
-              type="text"
-              name="RoomNumber"
-              value={editData.RoomNumber}
-              onChange={handleEditChange}
-              required
-              placeholder="Enter room number"
-            />
-          </div>
-          <div className="form-group">
-            <label>Floor</label>
-            <input
-              type="text"
-              name="Floor"
-              value={editData.Floor}
-              onChange={handleEditChange}
-              required
-              placeholder="Enter floor number"
-            />
-          </div>
-          <div className="form-group">
-            <label>Status</label>
-            <select
-              name="Status"
-              value={editData.Status}
-              onChange={handleEditChange}
-              required
-            >
-              <option value="Available">Available</option>
-              <option value="Occupied">Occupied</option>
-            </select>
-          </div>
-          <button type="submit" className="save-button2">Save Changes</button>
-        </form>
-        </div>
-      )}
+      
 
       <BottomNav />
     </div>

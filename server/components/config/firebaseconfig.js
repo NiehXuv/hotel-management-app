@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
-
+import { getStorage } from 'firebase/storage';
 const firebaseConfig = {
     apiKey: "AIzaSyDsBdeguzPtnWxnnHpAp8p0k75RrgoPaUM",
   authDomain: "booking-app-e197c.firebaseapp.com",
@@ -14,5 +14,5 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
-
-export { firebaseApp, database };
+const storage = getStorage(firebaseApp);
+export { firebaseApp, database, storage };

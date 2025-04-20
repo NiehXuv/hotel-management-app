@@ -1,8 +1,9 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const multer = require('multer');
 const cors = require('cors');
 dotenv.config();
-
+const upload = multer({ storage: multer.memoryStorage() });
 // Auth functions
 const { sendResetEmail } = require('./components/Account/sendresetemail');
 const { resetPassword } = require('./components/Account/resetpassword');
@@ -15,7 +16,7 @@ const { optimalPrice } = require('./components/Booking/optimalPrice');
 const { modifyBookingStatus } = require("./components/Booking/modifyBookingStatus"); 
 const { fetchMockBookings } = require("./components/Booking/fetchMockBookings");
 // Room functions
-const { createRoom, getHotelIds, getRoomTypes, showRoom } = require('./components/Room/createRoom');
+const { createRoom, getHotelIds, getRoomTypes, showRoom, uploadImage, deleteImage } = require('./components/Room/createRoom');
 const { updateRoomStatus } = require('./components/Room/updateRoomStatus');
 const { updateRoom } = require('./components/Room/updateRoom');
 const { listRooms } = require('./components/Room/listRooms');
@@ -85,6 +86,8 @@ app.put('/hotels/:hotelId/rooms/:roomNumber', updateRoom);
 app.get('/api/hotels/:hotelId/rooms', listRooms);
 app.delete('/hotels/:hotelId/rooms/:roomNumber', deleteRoom);
 app.get('/api/hotels/:hotelId/rooms/:roomId', showRoom);
+app.post('/api/hotels/:hotelId/rooms/:roomId/images', upload.single('image'), uploadImage); // Add upload middleware for image
+app.delete('/api/hotels/:hotelId/rooms/:roomId/images/:imageId', deleteImage);
 // Hotel (Property) routes
 app.post('/api/hotel/create', createProperty);
 app.get('/hotels', listProperty);

@@ -5,7 +5,8 @@
     margin: auto;
     padding: 1em;
     background-color: #f9f9f9;
-    width: 100%;
+    width: 100vw;
+    max-width: 480px;
     min-height: 100vh;
     touch-action: pan-y;
     padding-bottom: 2em;
@@ -606,3 +607,4 @@
     background-color: #cccccc;
     cursor: not-allowed;
   }
+  

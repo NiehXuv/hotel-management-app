@@ -1,5 +1,21 @@
-const { database } = require("../config/firebaseconfig");
-const { ref, set, get } = require("firebase/database");
+import { database } from "../config/firebaseconfig.js";
+import { ref, set, get, update, remove } from "firebase/database";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Configure Cloudflare R2 Client (S3-compatible)
+const r2Client = new S3Client({
+    region: 'auto', // R2 uses 'auto' for region
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+    forcePathStyle: true // Required for R2
+});
 
 const createRoom = async (req, res) => {
     try {
@@ -12,10 +28,9 @@ const createRoom = async (req, res) => {
             PriceByNight = 0, 
             PriceBySection = 0, 
             RoomNumber,
-            Floor // New field for floor number
+            Floor
         } = req.body;
 
-        // Validation
         if (!hotelId || !RoomNumber || !RoomType || !RoomName || !Description) {
             return res.status(400).json({ 
                 success: false,
@@ -58,7 +73,6 @@ const createRoom = async (req, res) => {
             });
         }
 
-        // Check if RoomType exists in Hotel's RoomTypes and get prices
         const roomTypesRef = ref(database, `Hotel/${hotelId}/RoomTypes`);
         const roomTypesSnapshot = await get(roomTypesRef);
         let matchedRoomType = null;
@@ -74,7 +88,6 @@ const createRoom = async (req, res) => {
             });
         }
 
-        // Use prices from RoomTypes if not provided in request body
         const finalPriceByHour = PriceByHour !== 0 ? Number(PriceByHour) : matchedRoomType.PriceByHour;
         const finalPriceByNight = PriceByNight !== 0 ? Number(PriceByNight) : matchedRoomType.PriceByNight;
         const finalPriceBySection = PriceBySection !== 0 ? Number(PriceBySection) : matchedRoomType.PriceBySection;
@@ -88,7 +101,6 @@ const createRoom = async (req, res) => {
             });
         }
 
-        // Store RoomNumber and Floor as fields in the room data
         await set(roomRef, {
             RoomType: RoomType.trim(),
             RoomName: RoomName.trim(),
@@ -213,7 +225,6 @@ const showRoom = async (req, res) => {
     try {
         const { hotelId, roomId } = req.params;
 
-        // Validation
         if (!hotelId || !roomId) {
             return res.status(400).json({
                 success: false,
@@ -221,7 +232,6 @@ const showRoom = async (req, res) => {
             });
         }
 
-        // Check if hotel exists
         const hotelRef = ref(database, `Hotel/${hotelId}`);
         const hotelSnapshot = await get(hotelRef);
         if (!hotelSnapshot.exists()) {
@@ -231,7 +241,6 @@ const showRoom = async (req, res) => {
             });
         }
 
-        // Get specific room
         const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomId}`);
         const roomSnapshot = await get(roomRef);
         
@@ -244,7 +253,6 @@ const showRoom = async (req, res) => {
 
         const roomData = roomSnapshot.val();
         
-        // Transform activities into an array with ActivityId
         const activities = roomData.Activity
             ? Object.entries(roomData.Activity).map(([id, activity]) => ({
                 ActivityId: id,
@@ -255,7 +263,6 @@ const showRoom = async (req, res) => {
               }))
             : [];
 
-        // Transform issues into an array with IssueId
         const issues = roomData.Issue
             ? Object.entries(roomData.Issue).map(([id, issue]) => ({
                 IssueId: id,
@@ -265,7 +272,15 @@ const showRoom = async (req, res) => {
               }))
             : [];
 
-        // Prepare response data
+        const imagesRef = ref(database, `Hotel/${hotelId}/Room/${roomId}/Images`);
+        const imagesSnapshot = await get(imagesRef);
+        const images = imagesSnapshot.exists()
+            ? Object.entries(imagesSnapshot.val()).map(([id, url]) => ({
+                ImageId: id,
+                url: url
+              }))
+            : [];
+
         const roomResponse = {
             hotelId,
             roomId,
@@ -282,8 +297,9 @@ const showRoom = async (req, res) => {
             updatedAt: roomData.UpdatedAt,
             activityCounter: roomData.ActivityCounter || 0,
             issueCounter: roomData.IssueCounter || 0,
-            activities, // Array of activities with ActivityId
-            issues, // Array of issues with IssueId
+            activities,
+            issues,
+            images
         };
 
         return res.status(200).json({
@@ -311,4 +327,181 @@ const showRoom = async (req, res) => {
     }
 };
 
-module.exports = { createRoom, getHotelIds, getRoomTypes, showRoom};
+const uploadImage = async (req, res) => {
+    try {
+        const { hotelId, roomId } = req.params;
+
+        if (!hotelId || !roomId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Hotel ID and Room ID are required'
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'Image file is required'
+            });
+        }
+
+        const hotelRef = ref(database, `Hotel/${hotelId}`);
+        const hotelSnapshot = await get(hotelRef);
+        if (!hotelSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Hotel not found'
+            });
+        }
+
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomId}`);
+        const roomSnapshot = await get(roomRef);
+        if (!roomSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Room not found'
+            });
+        }
+
+        const file = req.file;
+        const storagePath = `hotels/${hotelId}/rooms/${roomId}/images/${Date.now()}_${file.originalname}`;
+
+        const uploadParams = {
+            Bucket: process.env.R2_BUCKET,
+            Key: storagePath,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+        };
+
+        console.log('Uploading image to Cloudflare R2:', {
+            storagePath,
+            fileSize: file.size,
+            mimeType: file.mimetype,
+            bucket: process.env.R2_BUCKET
+        });
+
+        await r2Client.send(new PutObjectCommand(uploadParams));
+        console.log('Image uploaded successfully to R2');
+
+        // Generate a permanent URL using the R2.dev subdomain
+        const downloadURL = `${process.env.R2_DEV_URL}/${storagePath}`;
+        console.log('Permanent Download URL:', downloadURL);
+
+        const imagesRef = ref(database, `Hotel/${hotelId}/Room/${roomId}/Images`);
+        const imagesSnapshot = await get(imagesRef);
+        let nextId = 1;
+        if (imagesSnapshot.exists()) {
+            const imageIds = Object.keys(imagesSnapshot.val()).map(id => parseInt(id));
+            nextId = Math.max(...imageIds) + 1;
+        }
+
+        const imageEntryRef = ref(database, `Hotel/${hotelId}/Room/${roomId}/Images/${nextId}`);
+        await set(imageEntryRef, downloadURL);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Image uploaded successfully',
+            ImageId: nextId.toString(),
+            url: downloadURL
+        });
+    } catch (error) {
+        console.error('Error uploading image:', {
+            error: error.message,
+            code: error.code,
+            stack: error.stack,
+            hotelId: req.params.hotelId,
+            roomId: req.params.roomId,
+            serverResponse: error.serverResponse || 'No server response'
+        });
+        return res.status(500).json({
+            success: false,
+            error: 'Internal Server Error'
+        });
+    }
+};
+
+// New endpoint to delete an image (from the gallery)
+const deleteImage = async (req, res) => {
+    try {
+        const { hotelId, roomId, imageId } = req.params;
+
+        if (!hotelId || !roomId || !imageId) {
+            return res.status(400).json({
+                success: false,
+                error: 'Hotel ID, Room ID, and Image ID are required'
+            });
+        }
+
+        const hotelRef = ref(database, `Hotel/${hotelId}`);
+        const hotelSnapshot = await get(hotelRef);
+        if (!hotelSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Hotel not found'
+            });
+        }
+
+        const roomRef = ref(database, `Hotel/${hotelId}/Room/${roomId}`);
+        const roomSnapshot = await get(roomRef);
+        if (!roomSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Room not found'
+            });
+        }
+
+        const imageEntryRef = ref(database, `Hotel/${hotelId}/Room/${roomId}/Images/${imageId}`);
+        const imageSnapshot = await get(imageEntryRef);
+        if (!imageSnapshot.exists()) {
+            return res.status(404).json({
+                success: false,
+                error: 'Image not found'
+            });
+        }
+
+        const imageUrl = imageSnapshot.val();
+
+        // Extract the R2 key from the URL
+        const url = new URL(imageUrl);
+        const key = decodeURIComponent(url.pathname.substring(url.pathname.indexOf(`hotels/${hotelId}/rooms/${roomId}/images/`)));
+
+        // Delete from Cloudflare R2
+        const deleteParams = {
+            Bucket: process.env.R2_BUCKET,
+            Key: key,
+        };
+
+        console.log('Deleting image from Cloudflare R2:', { key, bucket: process.env.R2_BUCKET });
+        await r2Client.send(new DeleteObjectCommand(deleteParams));
+        console.log('Image deleted successfully from R2');
+
+        // Remove the image URL from the database
+        await remove(imageEntryRef);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Image deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting image:', {
+            error: error.message,
+            stack: error.stack,
+            hotelId: req.params.hotelId,
+            roomId: req.params.roomId,
+            imageId: req.params.imageId
+        });
+        return res.status(500).json({
+            success: false,
+            error: 'Internal Server Error'
+        });
+    }
+};
+
+export {
+    createRoom,
+    getHotelIds,
+    getRoomTypes,
+    showRoom,
+    uploadImage,
+    deleteImage
+};
