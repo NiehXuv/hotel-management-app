@@ -1,3 +1,4 @@
+// AppRoutes.js
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,19 +31,15 @@ import Room from '../pages/Room';
 import CreateAccount from '../pages/CreateAccount'; 
 import RoomMap from '../pages/RoomMap';
 import RoomDetail from '../pages/RoomDetail';
-/**
- * Protected Route Component
- * Redirects to login if user is not authenticated
- */
+import PricingPolicy from '../pages/PricingPolicy';
+
 const ProtectedRoute = ({ children, requiredPermission = null }) => {
   const { currentUser, hasPermission } = useAuth();
   
-  // Check if user is authenticated
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
   
-  // Check if user has required permission (if specified)
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -50,16 +47,13 @@ const ProtectedRoute = ({ children, requiredPermission = null }) => {
   return children;
 };
 
-/**
- * Main Application Routes
- */
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/create-account" element={<CreateAccount />} /> {/* Moved to public routes and fixed path */}
+      <Route path="/create-account" element={<CreateAccount />} />
 
       {/* Protected Routes */}
       <Route 
@@ -70,7 +64,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      
+      <Route path="/pricingpolicy" element={<PricingPolicy />} />
+      <Route 
+        path="/pricingpolicy/:hotelId" 
+        element={
+          <ProtectedRoute>
+            <PricingPolicy />
+          </ProtectedRoute>
+        } 
+      />
+
       <Route 
         path="/dashboard" 
         element={
@@ -103,7 +106,8 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <RoomDetail />
           </ProtectedRoute>
-        } />
+        } 
+      />
       <Route 
         path="/booking" 
         element={
@@ -254,7 +258,6 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* Add Property Route Here */}
       <Route 
         path="/property" 
         element={
@@ -273,7 +276,6 @@ const AppRoutes = () => {
         } 
       />
       
-      {/* 404 Route */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

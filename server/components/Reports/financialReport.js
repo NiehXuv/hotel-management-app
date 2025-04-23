@@ -1,8 +1,6 @@
+// financialReport.js
 const { database } = require("../config/firebaseconfig");
 const { ref, get } = require("firebase/database");
-
-// If using Node.js 17 or earlier, uncomment the following line:
-// const fetch = require("node-fetch");
 
 const financialReport = async (req, res) => {
   try {
@@ -27,7 +25,6 @@ const financialReport = async (req, res) => {
 
     console.log(`Date range: ${start.toISOString()} to ${end.toISOString()}`);
 
-    // Step 1: Fetch all hotels
     const hotelsRef = ref(database, "Hotel");
     const hotelsSnapshot = await get(hotelsRef);
 
@@ -44,118 +41,256 @@ const financialReport = async (req, res) => {
             bestProperty: { name: "N/A", rate: 0 },
             bestRoomType: "N/A",
           },
+          hotelDetails: [],
         },
         message: "No hotels found in the database",
       });
     }
 
-    const hotelsData = hotelsSnapshot.val();
-    const hotelsList = Object.entries(hotelsData).map(([id, hotel]) => ({
-      hotelId: id,
-      name: hotel.Name,
-    }));
+    const bookingsRef = ref(database, "Booking");
+    const bookingsSnapshot = await get(bookingsRef);
 
-    console.log("Hotels list:", hotelsList);
+    const ratingsRef = ref(database, "Ratings");
+    const ratingsSnapshot = await get(ratingsRef);
 
-    // Step 2: Fetch details for each hotel by calling the showProperty endpoint
     let totalRevenue = 0;
-    let totalRoomNights = 0;
-    let totalOccupiedRoomNights = 0;
+    let totalOccupiedRooms = 0;
+    let totalOccupancyBase = 0;
     const revenueByHotel = {};
     const revenueByRoomType = {};
     const roomTypeOccupancy = {};
     const occupancyByHotel = {};
+    const hotelsList = [];
+    const hotelDetailsList = [];
 
-    for (const hotel of hotelsList) {
-      const hotelId = hotel.hotelId;
-      try {
-        // Construct the URL with query parameters
-        const url = new URL(`http://localhost:5000/hotels/${hotelId}`);
-        url.searchParams.append("startDate", startDate);
-        url.searchParams.append("endDate", endDate);
+    const hotelsData = hotelsSnapshot.val();
+    for (const [hotelId, hotel] of Object.entries(hotelsData)) {
+      hotelsList.push({ hotelId, name: hotel.Name });
 
-        // Make HTTP request to the showProperty endpoint using fetch
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+      const roomsRef = ref(database, `Hotel/${hotelId}/Room`);
+      const roomSnapshot = await get(roomsRef);
+      const roomPriceMap = {};
+      let totalRooms = 0;
+      let hotelOccupiedRooms = 0;
+      let hotelAvailableRooms = 0;
+      let roomsList = [];
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+      if (roomSnapshot.exists()) {
+        const roomsData = roomSnapshot.val();
+        roomsList = Object.entries(roomsData)
+          .filter(
+            ([roomNumber]) =>
+              ![
+                "ActivityCounter",
+                "IssueCounter",
+                "EquipmentCounter",
+                "BookingCounter",
+              ].includes(roomNumber)
+          )
+          .map(([roomNumber, data]) => {
+            if (data.PriceByNight) {
+              roomPriceMap[String(roomNumber)] = data.PriceByNight;
+            }
+            return {
+              roomNumber,
+              ...data,
+              Activity: data.Activity
+                ? Object.entries(data.Activity).map(([id, activity]) => ({
+                    id,
+                    ...activity,
+                  }))
+                : [],
+              Issue: data.Issue
+                ? Object.entries(data.Issue).map(([id, issue]) => ({
+                    id,
+                    ...issue,
+                    roomNumber,
+                  }))
+                : [],
+              Equipment: data.Equipment
+                ? Object.entries(data.Equipment).map(([id, equipment]) => ({
+                    id,
+                    ...equipment,
+                  }))
+                : [],
+            };
+          });
 
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || "Failed to fetch hotel details");
-        }
-
-        const hotelDetails = data.data;
-
-        // Aggregate revenue
-        const revenue = hotelDetails.roomStatistics.revenueInRange;
-        totalRevenue += revenue;
-        revenueByHotel[hotelId] = revenue;
-
-        // Aggregate room type revenue and occupancy
-        hotelDetails.rooms.forEach((room) => {
-          const roomType = room.RoomName || "Unknown";
-          const roomId = room.roomNumber;
-
-          // Initialize room type aggregates
-          if (!revenueByRoomType[roomType]) {
-            revenueByRoomType[roomType] = 0;
-          }
-          if (!roomTypeOccupancy[roomType]) {
-            roomTypeOccupancy[roomType] = { total: 0, occupiedRoomNights: 0 };
-          }
-
-          // Add to room type occupancy
-          roomTypeOccupancy[roomType].total += 1;
-
-          // Calculate revenue for this room type by finding bookings for this room
-          // Note: showProperty response doesn't include allBookings directly
-          // We'll need to approximate room type revenue using the total revenue
-          // A better approach would be to modify showProperty to return revenue per room type
-          // For now, we'll distribute the hotel's revenue proportionally (simplified)
-          const roomCount = hotelDetails.rooms.length;
-          const revenuePerRoom = roomCount > 0 ? revenue / roomCount : 0;
-          revenueByRoomType[roomType] += revenuePerRoom;
-
-          // Room type occupancy (approximate using hotel's occupiedRoomNights)
-          const daysInRange = (end - start) / (1000 * 60 * 60 * 24) + 1;
-          const hotelTotalRoomNights = hotelDetails.roomStatistics.totalRooms * daysInRange;
-          const hotelOccupiedRoomNights = (hotelDetails.roomStatistics.occupancyRate / 100) * hotelTotalRoomNights;
-          roomTypeOccupancy[roomType].occupiedRoomNights = (roomTypeOccupancy[roomType].occupiedRoomNights || 0) + (hotelOccupiedRoomNights / roomCount);
-        });
-
-        // Aggregate occupancy
-        const daysInRange = (end - start) / (1000 * 60 * 60 * 24) + 1;
-        const hotelTotalRoomNights = hotelDetails.roomStatistics.totalRooms * daysInRange;
-        const hotelOccupiedRoomNights = (hotelDetails.roomStatistics.occupancyRate / 100) * hotelTotalRoomNights;
-
-        totalRoomNights += hotelTotalRoomNights;
-        totalOccupiedRoomNights += hotelOccupiedRoomNights;
-
-        occupancyByHotel[hotelId] = {
-          totalRoomNights: hotelTotalRoomNights,
-          occupiedRoomNights: hotelOccupiedRoomNights,
-          rate: hotelDetails.roomStatistics.occupancyRate,
-        };
-      } catch (error) {
-        console.error(`Error fetching details for hotel ${hotelId}:`, error.message);
-        revenueByHotel[hotelId] = 0;
-        occupancyByHotel[hotelId] = { totalRoomNights: 0, occupiedRoomNights: 0, rate: 0 };
+        totalRooms = roomsList.length;
+        hotelOccupiedRooms = roomsList.filter((room) => room.Status === "Occupied").length;
+        hotelAvailableRooms = roomsList.filter((room) => room.Status === "Available").length;
       }
+
+      const hotelTotalOccupancyBase = hotelOccupiedRooms + hotelAvailableRooms;
+      const hotelOccupancyRate = hotelTotalOccupancyBase > 0 ? (hotelOccupiedRooms / hotelTotalOccupancyBase) * 100 : 0;
+
+      totalOccupiedRooms += hotelOccupiedRooms;
+      totalOccupancyBase += hotelTotalOccupancyBase;
+
+      let hotelRevenue = 0;
+      let allActivities = [];
+      let allIssues = [];
+      const priceRange = { min: Infinity, max: -Infinity };
+
+      roomsList.forEach((room) => {
+        if (room.PriceByNight) {
+          priceRange.min = Math.min(priceRange.min, room.PriceByNight);
+          priceRange.max = Math.max(priceRange.max, room.PriceByNight);
+        }
+        if (room.Activity) {
+          allActivities.push(
+            ...room.Activity.map((activity) => ({
+              ...activity,
+              roomNumber: room.roomNumber,
+            }))
+          );
+        }
+        if (room.Issue) {
+          allIssues.push(...room.Issue);
+        }
+      });
+
+      allActivities.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+      allIssues.sort((a, b) => new Date(b.ReportedAt) - new Date(a.Timestamp));
+
+      const dailyRevenue = roomsList
+        .filter((room) => room.Status === "Occupied")
+        .reduce((sum, room) => sum + (room.PriceByNight || 0), 0);
+
+      if (bookingsSnapshot.exists()) {
+        const bookingsData = bookingsSnapshot.val();
+        const hotelBookings = Object.values(bookingsData).filter(
+          (booking) => String(booking.hotelId) === String(hotelId)
+        );
+
+        hotelBookings.forEach((booking) => {
+          const bookIn = new Date(booking.bookIn);
+          const bookOut = new Date(booking.bookOut);
+
+          const stayStart = new Date(Math.max(bookIn, start));
+          const stayEnd = new Date(Math.min(bookOut, end));
+          const overlappingDays = Math.max(0, (stayEnd - stayStart) / (1000 * 60 * 60 * 24));
+
+          if (overlappingDays > 0) {
+            const roomId = String(booking.roomId);
+            const priceByNight = roomPriceMap[roomId] || 0;
+            const totalPrice = priceByNight * overlappingDays;
+            hotelRevenue += totalPrice;
+
+            const room = roomsList.find((r) => r.roomNumber === roomId);
+            const roomType = room?.RoomName || "Unknown";
+            revenueByRoomType[roomType] = (revenueByRoomType[roomType] || 0) + totalPrice;
+          }
+        });
+      }
+
+      totalRevenue += hotelRevenue;
+      revenueByHotel[hotelId] = hotelRevenue;
+      occupancyByHotel[hotelId] = {
+        totalRoomNights: hotelTotalOccupancyBase,
+        occupiedRoomNights: hotelOccupiedRooms,
+        rate: Number(hotelOccupancyRate.toFixed(2)), // Round to 2 decimal places
+      };
+
+      let weeklyRevenue = 0;
+      let monthlyRevenue = 0;
+      let yearToDateRevenue = 0;
+      let totalStayDays = 0;
+      let validBookingCount = 0;
+      const now = new Date();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const sevenDaysAgo = new Date(now.getTime() - 7 * oneDayMs);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * oneDayMs);
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+
+      const hotelBookings = bookingsSnapshot.exists()
+        ? Object.values(bookingsSnapshot.val()).filter(
+            (booking) => String(booking.hotelId) === String(hotelId)
+          )
+        : [];
+
+      hotelBookings.forEach((booking) => {
+        const bookIn = new Date(`${booking.bookIn}T00:00:00Z`);
+        const bookOut = new Date(`${booking.bookOut}T00:00:00Z`);
+        const stayDurationDays = (bookOut - bookIn) / oneDayMs;
+
+        const roomId = String(booking.roomId);
+        const priceByNight = roomPriceMap[roomId] || 0;
+
+        if (stayDurationDays <= 0 || !priceByNight) return;
+
+        totalStayDays += stayDurationDays;
+        validBookingCount += 1;
+
+        const dailyRate = priceByNight;
+
+        const calculateRevenueForPeriod = (periodStart, periodEnd) => {
+          const stayStart = new Date(Math.max(bookIn, periodStart));
+          const stayEnd = new Date(Math.min(bookOut, periodEnd));
+          const daysInPeriod = Math.max(0, (stayEnd - stayStart) / oneDayMs);
+          return daysInPeriod * dailyRate;
+        };
+
+        if (bookIn <= now && bookOut >= sevenDaysAgo) {
+          weeklyRevenue += calculateRevenueForPeriod(sevenDaysAgo, now);
+        }
+        if (bookIn <= now && bookOut >= thirtyDaysAgo) {
+          monthlyRevenue += calculateRevenueForPeriod(thirtyDaysAgo, now);
+        }
+        if (bookIn <= now && bookOut >= yearStart) {
+          yearToDateRevenue += calculateRevenueForPeriod(yearStart, now);
+        }
+      });
+
+      const averageStayDuration =
+        validBookingCount > 0 ? (totalStayDays / validBookingCount).toFixed(1) : 0;
+
+      let averageRating = 0;
+      if (ratingsSnapshot.exists()) {
+        const ratingsData = ratingsSnapshot.val();
+        const hotelRatings = Object.values(ratingsData)
+          .filter((rating) => String(rating.hotelId) === String(hotelId))
+          .map((rating) => rating.value || 0);
+
+        const totalRating = hotelRatings.reduce((sum, rating) => sum + rating, 0);
+        averageRating = hotelRatings.length > 0
+          ? (totalRating / hotelRatings.length).toFixed(1)
+          : 0;
+      }
+
+      hotelDetailsList.push({
+        hotelId,
+        name: hotel.Name,
+        description: hotel.Description,
+        location: hotel.Location,
+        email: hotel.Email,
+        phoneNumber: hotel.PhoneNumber,
+        status: hotel.Status,
+        roomStatistics: {
+          totalRooms,
+          occupiedRooms: Number(hotelOccupiedRooms.toFixed(0)),
+          availableRooms: hotelAvailableRooms,
+          needsCleaning: roomsList.filter((room) => room.Status === "Dirty").length,
+          maintenance: roomsList.filter((room) => room.Status === "Maintenance").length,
+          occupancyRate: Number(hotelOccupancyRate.toFixed(2)), // Round to 2 decimal places
+          dailyRevenue: Number(dailyRevenue.toFixed(2)),
+          priceRange:
+            priceRange.min === Infinity
+              ? "N/A"
+              : `$${priceRange.min}-${priceRange.max}`,
+          revenueInRange: Number(hotelRevenue.toFixed(2)),
+          weeklyRevenue: Number(weeklyRevenue.toFixed(2)),
+          monthlyRevenue: Number(monthlyRevenue.toFixed(2)),
+          yearToDateRevenue: Number(yearToDateRevenue.toFixed(2)),
+          averageStayDuration: Number(averageStayDuration),
+          averageRating: Number(averageRating),
+        },
+        rooms: roomsList,
+        activities: allActivities,
+        issues: allIssues,
+      });
     }
 
-    console.log("Revenue by Hotel:", revenueByHotel);
-    console.log("Revenue by Room Type:", revenueByRoomType);
-    console.log("Total Revenue:", totalRevenue);
-
-    // Step 3: Identify the top property by revenue
     let topProperty = null;
     let topRevenue = 0;
     const revenueBreakdown = [];
@@ -179,9 +314,6 @@ const financialReport = async (req, res) => {
       }
     }
 
-    console.log("Revenue Breakdown:", revenueBreakdown);
-
-    // Step 4: Identify the top room type by revenue
     let topRoomType = null;
     let topRoomTypeRevenue = 0;
 
@@ -192,8 +324,7 @@ const financialReport = async (req, res) => {
       }
     }
 
-    // Step 5: Calculate occupancy rates
-    const overallOccupancyRate = totalRoomNights > 0 ? (totalOccupiedRoomNights / totalRoomNights) * 100 : 0;
+    const overallOccupancyRate = totalOccupancyBase > 0 ? (totalOccupiedRooms / totalOccupancyBase) * 100 : 0;
 
     let bestPropertyByOccupancy = { name: "N/A", rate: 0 };
     let highestOccupancyRate = 0;
@@ -207,7 +338,7 @@ const financialReport = async (req, res) => {
         highestOccupancyRate = rate;
         bestPropertyByOccupancy = {
           name: hotelName,
-          rate: Number(rate.toFixed(1)),
+          rate: Number(rate.toFixed(2)), // Round to 2 decimal places
           occupied: stats.occupiedRoomNights,
           total: stats.totalRoomNights,
         };
@@ -218,7 +349,7 @@ const financialReport = async (req, res) => {
     let highestRoomTypeOccupancyRate = 0;
 
     for (const [roomType, stats] of Object.entries(roomTypeOccupancy)) {
-      const totalRoomNights = stats.total * ((end - start) / (1000 * 60 * 60 * 24) + 1);
+      const totalRoomNights = stats.total;
       const rate = totalRoomNights > 0 ? (stats.occupiedRoomNights / totalRoomNights) * 100 : 0;
       if (rate > highestRoomTypeOccupancyRate) {
         highestRoomTypeOccupancyRate = rate;
@@ -226,7 +357,6 @@ const financialReport = async (req, res) => {
       }
     }
 
-    // Step 6: Prepare the response
     const response = {
       success: true,
       data: {
@@ -240,15 +370,14 @@ const financialReport = async (req, res) => {
           revenueByProperty: revenueBreakdown,
         },
         occupancyRates: {
-          overall: Number(overallOccupancyRate.toFixed(1)),
+          overall: Number(overallOccupancyRate.toFixed(2)), // Round to 2 decimal places
           bestProperty: bestPropertyByOccupancy,
           bestRoomType: bestRoomTypeByOccupancy,
         },
+        hotelDetails: hotelDetailsList,
       },
       message: "Financial report generated successfully",
     };
-
-    console.log("Final Response:", response);
 
     return res.status(200).json(response);
   } catch (error) {

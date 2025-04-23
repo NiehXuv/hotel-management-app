@@ -1,9 +1,11 @@
+// server.js
 const express = require('express');
 const dotenv = require('dotenv');
 const multer = require('multer');
 const cors = require('cors');
 dotenv.config();
 const upload = multer({ storage: multer.memoryStorage() });
+
 // Auth functions
 const { sendResetEmail } = require('./components/Account/sendresetemail');
 const { resetPassword } = require('./components/Account/resetpassword');
@@ -28,12 +30,13 @@ const { listProperty } = require('./components/Property/listProperty');
 const { updateProperty } = require('./components/Property/updateProperty');
 const { deleteProperty } = require('./components/Property/deleteProperty');
 const { showProperty } = require('./components/Property/showProperty');
+const { setPricingPolicy, getPricingPolicy } = require("./components/Property/pricingPolicy");
+
 // Customer
 const { createCustomer } = require('./components/Customer/createCustomer');
 const { listAllCustomers } = require('./components/Customer/listCustomer');
 const { removeCustomer } = require('./components/Customer/removeCustomer');
 const { updateCustomer } = require('./components/Customer/updateCustomer');
-
 
 const { createActivity } = require('./components/Activity/createActivity');
 const { updateActivity } = require('./components/Activity/updateActivity');
@@ -42,7 +45,6 @@ const { removeActivity } = require('./components/Activity/removeActivity');
 const { createIssue } = require('./components/Issue/createIssue');
 const { updateIssue } = require('./components/Issue/updateIssue');
 const { removeIssue } = require('./components/Issue/removeIssue');
-
 
 const { createEquipment } = require('./components/Equipment/createEquipment');
 const { updateEquipment } = require('./components/Equipment/updateEquipment');
@@ -56,7 +58,8 @@ const { listStaff } = require('./components/Staff/listStaff.js');
 const { financialReport } = require("./components/Reports/financialReport");
 const { createAccount } = require('./components/Account/createAccount');
 const { storeConfirmationCode, verifyConfirmationCode, sendConfirmationEmail } = require('./components/Account/confirmationCode');
-
+//Chatbot
+const { chat, getMessages, clearChat } = require("./components/Chatbot/Chatbot"); 
 
 const app = express();
 app.use(express.json());
@@ -86,12 +89,15 @@ app.put('/hotels/:hotelId/rooms/:roomNumber', updateRoom);
 app.get('/api/hotels/:hotelId/rooms', listRooms);
 app.delete('/hotels/:hotelId/rooms/:roomNumber', deleteRoom);
 app.get('/api/hotels/:hotelId/rooms/:roomId', showRoom);
-app.post('/api/hotels/:hotelId/rooms/:roomId/images', upload.single('image'), uploadImage); // Add upload middleware for image
+app.post('/api/hotels/:hotelId/rooms/:roomId/images', upload.single('image'), uploadImage);
 app.delete('/api/hotels/:hotelId/rooms/:roomId/images/:imageId', deleteImage);
 // Hotel (Property) routes
+
+app.post("/pricingpolicy/:hotelId", setPricingPolicy);
+app.get("/pricingpolicy", getPricingPolicy);
 app.post('/api/hotel/create', createProperty);
 app.get('/hotels', listProperty);
-app.get('/hotels/:hotelId', showProperty); // New endpoint
+app.get('/hotels/:hotelId', showProperty);
 app.put('/hotels/:hotelId', updateProperty);
 app.delete('/hotels/:hotelId', deleteProperty);
 
@@ -100,7 +106,6 @@ app.post('/customer/create', createCustomer);
 app.get('/customer/list', listAllCustomers);
 app.delete('/customer/delete/:customerId', removeCustomer);
 app.put('/customer/update/:customerId', updateCustomer);
-
 
 // Activity routes
 app.post('/hotels/:hotelId/rooms/:roomNumber/activities', createActivity);
@@ -126,9 +131,10 @@ app.delete("/notifications", clearAllNotifications);
 
 app.get('/financial', financialReport);
 
-
-
-
+//Chatbot
+app.post("/api/chat", chat);
+app.get("/api/chat/messages/:userId", getMessages);
+app.delete("/api/chat/clear/:userId/:category", clearChat);
 
 // Start the server
 const PORT = process.env.PORT || 5000;

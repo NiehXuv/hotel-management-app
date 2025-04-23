@@ -471,6 +471,10 @@ const Calendar = () => {
     }
   };
 
+  const handleLoadOptimalPrice = (bookingId) => {
+    fetchOptimalPrice(bookingId);
+  };
+
   const formattedMonth = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
   const { timeSlotMap, bookedTimes } = generateBookedTimeSlots();
 
@@ -776,12 +780,21 @@ const Calendar = () => {
                             <p className="optimal-price-text">
                               Optimal Price: ${optimalPriceData.optimalPrice}
                             </p>
-                            <button
-                              className="edit-price-button"
-                              onClick={() => setEditingPrice(true)}
-                            >
-                              ✏️
-                            </button>
+                            <div className="price-buttons">
+                              <button
+                                className="edit-price-button"
+                                onClick={() => setEditingPrice(true)}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                className="load-price-button"
+                                onClick={() => handleLoadOptimalPrice(booking.id)}
+                                disabled={priceLoading}
+                              >
+                                ⟳
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>

@@ -17,6 +17,7 @@ export const rolePermissions = {
     canManageUsers: true,
     canApproveExpenses: true,
     canManageSettings: true,
+    canManagePricing: true, // Added permission for managing pricing policies
     dashboardAccess: ['statistics', 'tasks', 'properties', 'staff', 'finances'],
     navigationItems: ['dashboard', 'tasks', 'properties', 'notifications', 'users', 'reports', 'settings']
   },
@@ -28,6 +29,7 @@ export const rolePermissions = {
     canManageUsers: false,
     canApproveExpenses: true,
     canManageSettings: false,
+    canManagePricing: true, // Added permission for managers to manage pricing policies (optional)
     dashboardAccess: ['statistics', 'tasks', 'properties', 'staff'],
     navigationItems: ['dashboard', 'tasks', 'properties', 'notifications', 'reports']
   },
@@ -39,6 +41,7 @@ export const rolePermissions = {
     canManageUsers: false,
     canApproveExpenses: false,
     canManageSettings: false,
+    canManagePricing: false, // Receptionists typically shouldn't manage pricing
     dashboardAccess: ['tasks', 'properties'],
     navigationItems: ['dashboard', 'tasks', 'properties', 'notifications']
   },
@@ -50,6 +53,7 @@ export const rolePermissions = {
     canManageUsers: false,
     canApproveExpenses: false,
     canManageSettings: false,
+    canManagePricing: false, // Sales role shouldn't manage pricing
     dashboardAccess: ['statistics', 'finances'],
     navigationItems: ['dashboard', 'reports', 'notifications']
   },
@@ -62,6 +66,7 @@ export const rolePermissions = {
     canManageUsers: false,
     canApproveExpenses: false,
     canManageSettings: false,
+    canManagePricing: false, // Default role has no pricing management access
     dashboardAccess: [],
     navigationItems: []
   }
@@ -118,7 +123,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Invalid password');
       }
   
-      const userRole = foundUser.role
+      const userRole = foundUser.role;
       const userRoleLower = userRole.toLowerCase(); // Normalize role to lowercase
   
       const userWithPermissions = {

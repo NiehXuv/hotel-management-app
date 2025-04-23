@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Card from "../components/common/Card"; // Assuming this is your Card component
 import { FaHotel, FaCog, FaUser, FaCalendar, FaChartLine, FaKey, FaQuestionCircle, FaComment } from "react-icons/fa"; // Added icons for Support
 import { IoChevronForward } from "react-icons/io5"; // Chevron icon
+import "../styles/menu.css"; // Import the separate CSS file
 
 const Menu = () => {
   // Define menu items for "Setting Menu"
@@ -11,6 +12,7 @@ const Menu = () => {
     { label: "Customer Setting", path: "/customer", icon: <FaUser /> },
     { label: "Booking Setting", path: "/booking", icon: <FaCalendar /> },
     { label: "Financial Report", path: "/reports", icon: <FaChartLine /> },
+    { label: "Pricing Policy Setting", path: "/pricingpolicy", icon: <FaCog /> }, // New option
   ];
 
   // Define menu items for "Support"
@@ -20,95 +22,23 @@ const Menu = () => {
     { label: "Send Us Your Feedback", path: "/feedback", icon: <FaComment /> },
   ];
 
-  // Styles to match the screenshot
-  const styles = {
-    container: {
-      width: "100vw",
-      maxWidth: "480px",
-      margin: "0 auto",
-      padding: "1rem",
-      paddingBottom: "calc(1rem + 60px)", // Space for bottom navigation
-      minHeight: "100vh",
-      backgroundColor: "#f9f9f9",
-      boxSizing: "border-box",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "1.5rem",
-    },
-    headerTitle: {
-      fontSize: "16px",
-      fontWeight: "400",
-      color: "#42A5F5", // Blue color for "Heart of Hoan Kiem"
-    },
-    userInfo: {
-      display: "flex",
-      alignItems: "center",
-      fontSize: "14px",
-      color: "#666",
-    },
-    userAvatar: {
-      width: "24px",
-      height: "24px",
-      borderRadius: "50%",
-      backgroundColor: "#42A5F5",
-      marginLeft: "8px",
-    },
-    sectionTitle: {
-      paddingLeft: '0.5em',
-      fontSize: "22px",
-      fontWeight: "600",
-      color: "#000",
-      marginBottom: "0.5rem",
-    },
-    card: {
-      borderRadius: "2em",
-      marginBottom: "1rem",
-      boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-    },
-    menuItem: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "12px 16px",
-      backgroundColor: "transparent",
-      color: "black",
-      textDecoration: "none",
-      fontSize: "16px",
-      fontWeight: "400",
-    },
-    icon: {
-      marginRight: "12px",
-      color: "#FFD167", // Blue icon color
-      fontSize: "20px",
-    },
-    chevron: {
-      color: "#B0BEC5", // Grayish chevron
-      fontSize: "20px",
-    },
-  };
-
   return (
-    <div style={styles.container}>
-      
-
+    <div className="menu-container">
       {/* Setting Menu Card */}
       <div>
-        <h2 style={styles.sectionTitle}>Setting Menu</h2>
-        <Card style={styles.card}>
+        <h2 className="section-title">Setting Menu</h2>
+        <Card className="menu-card">
           {settingMenuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              style={styles.menuItem}
+              className="menu-item"
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={styles.icon}>{item.icon}</span>
+              <div className="menu-item-content">
+                <span className="menu-icon">{item.icon}</span>
                 <span>{item.label}</span>
               </div>
-              <IoChevronForward style={styles.chevron} />
+              <IoChevronForward className="chevron-icon" />
             </Link>
           ))}
         </Card>
@@ -116,19 +46,19 @@ const Menu = () => {
 
       {/* Support Card */}
       <div>
-        <h2 style={styles.sectionTitle}>Support</h2>
-        <Card style={styles.card}>
+        <h2 className="section-title">Support</h2>
+        <Card className="menu-card">
           {supportMenuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              style={styles.menuItem}
+              className="menu-item"
             >
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={styles.icon}>{item.icon}</span>
+              <div className="menu-item-content">
+                <span className="menu-icon">{item.icon}</span>
                 <span>{item.label}</span>
               </div>
-              <IoChevronForward style={styles.chevron} />
+              <IoChevronForward className="chevron-icon" />
             </Link>
           ))}
         </Card>
